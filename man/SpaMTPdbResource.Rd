@@ -37,7 +37,4 @@ retrieved and cached by AnnotationHub.
 }
 \examples{
 SpaMTPdbResource("chem_props", metadata = TRUE)
-\dontrun{
-chem_props <- SpaMTPdbResource("chem_props")
-}
 }

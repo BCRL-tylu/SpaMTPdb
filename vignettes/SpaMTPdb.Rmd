@@ -17,7 +17,7 @@ vignette: >
 the SpaMTP software package. This keeps the software package small while
 allowing analyses to record and reproduce the exact database snapshot used.
 
-```{r}
+```{r setup}
 library(SpaMTPdb)
 resources <- SpaMTPdbResources(version = "latest")
 resources[c("resource", "version", "category", "default")]
@@ -25,9 +25,21 @@ resources[c("resource", "version", "category", "default")]
 
 # Loading resources
 
-Following AnnotationHub ingestion, a resource is loaded and cached with:
+Inspect a resource without downloading it:
 
-```{r eval=FALSE}
+```{r inspect-chemical-resource}
+chem_props_metadata <- SpaMTPdbResource(
+  "chem_props",
+  version = "3.0.7",
+  metadata = TRUE
+)
+chem_props_metadata[c("resource", "version", "rows", "columns")]
+```
+
+Following AnnotationHub ingestion, omit `metadata = TRUE` to retrieve and cache
+the R object:
+
+```r
 chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
 ```
 
@@ -35,22 +47,24 @@ The pruned RaMP chemical table and the derived structure features remain
 separate. SpaMTP's annotation engine loads and joins the second table by
 `iso_smiles` only when structure-aware ionisation scoring is requested:
 
-```{r eval=FALSE}
-smiles_features <- SpaMTPdbResource(
+```{r inspect-structure-resource}
+smiles_features_metadata <- SpaMTPdbResource(
   "smiles_features",
-  version = "3.0.7"
+  version = "3.0.7",
+  metadata = TRUE
 )
+smiles_features_metadata[c("resource", "version", "rows", "columns")]
 ```
 
 Package developers can stage the resources locally and configure:
 
-```{r eval=FALSE}
+```r
 options(SpaMTPdb.resource_dir = "/path/to/SpaMTPdb-resources/3.0.7")
 core <- SpaMTPdbBundle()
 ```
 
 # Session information
 
-```{r}
+```{r session-info}
 sessionInfo()
 ```

@@ -111,9 +111,6 @@ SpaMTPdbResources <- function(version = NULL, category = NULL,
 #'
 #' @examples
 #' SpaMTPdbResource("chem_props", metadata = TRUE)
-#' \dontrun{
-#' chem_props <- SpaMTPdbResource("chem_props")
-#' }
 SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
                              hub = NULL, metadata = FALSE, offline = FALSE) {
     manifest <- .spamtpdb_manifest()
