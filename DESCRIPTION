@@ -1,0 +1,39 @@
+Package: SpaMTPdb
+Type: Package
+Title: Versioned Annotation Resources for SpaMTP
+Version: 0.99.0
+Date: 2026-08-14
+Authors@R: c(
+    person("Tianyao", "Lu",
+           email = "lu.t@wehi.edu.au",
+           role = c("aut", "cre")),
+    person("Andrew", "Causer", role = "aut"),
+    person("Quan", "Nguyen", role = "aut")
+    )
+Description: Provides lightweight, version-aware access to the annotation
+    resources used by SpaMTP. Resources include pruned RaMP chemical,
+    identifier, pathway, and pathway-topology tables together with legacy
+    metabolite reference tables. Large files are distributed through
+    AnnotationHub rather than bundled in the package, while a local resource
+    directory can be used for development and reproducible database builds.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.6.0)
+Imports:
+    AnnotationHub,
+    S4Vectors,
+    utils
+Suggests:
+    AnnotationHubData,
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+biocViews: AnnotationData, AnnotationHub
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+URL: https://github.com/GenomicsMachineLearning/SpaMTPdb
+BugReports: https://github.com/GenomicsMachineLearning/SpaMTPdb/issues
+Config/roxygen2/version: 8.1.0

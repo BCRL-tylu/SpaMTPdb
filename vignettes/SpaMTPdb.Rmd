@@ -1,0 +1,45 @@
+---
+title: "Accessing SpaMTP Annotation Resources"
+author: "Tianyao Lu"
+date: "2026-08-14"
+output:
+  BiocStyle::html_document:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{Accessing SpaMTP Annotation Resources}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Introduction
+
+`SpaMTPdb` separates versioned RaMP and metabolite annotation resources from
+the SpaMTP software package. This keeps the software package small while
+allowing analyses to record and reproduce the exact database snapshot used.
+
+```{r}
+library(SpaMTPdb)
+resources <- SpaMTPdbResources(version = "latest")
+resources[c("resource", "version", "category", "default")]
+```
+
+# Loading resources
+
+Following AnnotationHub ingestion, a resource is loaded and cached with:
+
+```{r eval=FALSE}
+chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
+```
+
+Package developers can stage the resources locally and configure:
+
+```{r eval=FALSE}
+options(SpaMTPdb.resource_dir = "/path/to/SpaMTPdb-resources/3.0.7")
+core <- SpaMTPdbBundle()
+```
+
+# Session information
+
+```{r}
+sessionInfo()
+```
