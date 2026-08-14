@@ -34,6 +34,6 @@ biocViews: AnnotationData, AnnotationHub
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
-URL: https://github.com/GenomicsMachineLearning/SpaMTPdb
-BugReports: https://github.com/GenomicsMachineLearning/SpaMTPdb/issues
+URL: https://github.com/BCRL-tylu/SpaMTPdb
+BugReports: https://github.com/BCRL-tylu/SpaMTPdb/issues
 Config/roxygen2/version: 8.1.0

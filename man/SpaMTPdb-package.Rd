@@ -14,8 +14,8 @@ directory containing staged \code{.rds} files.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/GenomicsMachineLearning/SpaMTPdb}
-  \item Report bugs at \url{https://github.com/GenomicsMachineLearning/SpaMTPdb/issues}
+  \item \url{https://github.com/BCRL-tylu/SpaMTPdb}
+  \item Report bugs at \url{https://github.com/BCRL-tylu/SpaMTPdb/issues}
 }
 
 }
