@@ -19,9 +19,15 @@ and a KEGG network does not load HMDB topology data.
 To regenerate a release from a SpaMTP checkout:
 
 ```sh
+Rscript inst/scripts/precompute_smiles_features.R \
+  ../SpaMTP ../SpaMTPdb-resources 3.0.7 8 10000
 Rscript inst/scripts/stage_resources.R ../SpaMTP ../SpaMTPdb-resources 3.0.7
 Rscript inst/scripts/make-metadata.R
 ```
+
+`smiles_features` is a separate optional resource keyed by `iso_smiles`. This
+keeps the pruned `chem_props` table compact while allowing SpaMTP's annotation
+engine to attach precomputed functional groups and ion-mode priors on demand.
 
 The staged files are ready for an immutable host approved by AnnotationHub.
 They are deliberately excluded from Git.

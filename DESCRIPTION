@@ -12,8 +12,9 @@ Authors@R: c(
     )
 Description: Provides lightweight, version-aware access to the annotation
     resources used by SpaMTP. Resources include pruned RaMP chemical,
-    identifier, pathway, and pathway-topology tables together with legacy
-    metabolite reference tables. Large files are distributed through
+    identifier, pathway, and pathway-topology tables, precomputed SMILES
+    functional-group and ionisation features, and legacy metabolite reference
+    tables. Large files are distributed through
     AnnotationHub rather than bundled in the package, while a local resource
     directory can be used for development and reproducible database builds.
 License: MIT + file LICENSE

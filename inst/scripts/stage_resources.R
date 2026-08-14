@@ -19,22 +19,24 @@ resources <- data.frame(
         "chem_props", "source_df", "analyte", "analytehaspathway", "pathway",
         "ramp_db_metadata", "ramp_hmdb", "ramp_kegg", "ramp_reactome",
         "ramp_wikipathway", "hmdb_db", "chebi_db", "lipidmaps_db", "gnps_db",
-        "filtered_fmp10"
+        "filtered_fmp10", "smiles_features"
     ),
     source_file = c(
         "chem_props.rda", "source_df.rda", "analyte.rda", "analytehaspathway.rda",
         "pathway.rda", "ramp_db_metadata.rda", "RAMP_hmdb.rda", "RAMP_kegg.rda",
         "RAMP_Reactome.rda", "RAMP_wikipathway.rda", "HMDB_db.rda", "Chebi_db.rda",
-        "Lipidmaps_db.rda", "GNPS_db.rda", "filtered_fmp10.rda"
+        "Lipidmaps_db.rda", "GNPS_db.rda", "filtered_fmp10.rda", NA_character_
     ),
     source_object = c(
         "chem_props", "source_df", "analyte", "analytehaspathway", "pathway",
         "ramp_db_metadata", "RAMP_hmdb", "RAMP_kegg", "RAMP_Reactome",
         "RAMP_wikipathway", "HMDB_db", "Chebi_db", "Lipidmaps_db", "GNPS_db",
-        "filtered_fmp10"
+        "filtered_fmp10", "smiles_features"
     ),
-    category = c(rep("core", 6L), rep("topology", 4L), rep("legacy", 5L)),
-    default = c(rep(TRUE, 10L), rep(FALSE, 5L)),
+    category = c(
+        rep("core", 6L), rep("topology", 4L), rep("legacy", 5L), "structure"
+    ),
+    default = c(rep(TRUE, 10L), rep(FALSE, 6L)),
     stringsAsFactors = FALSE
 )
 resources$r_data_class <- rep(NA_character_, nrow(resources))
@@ -45,18 +47,28 @@ resources$object_bytes <- rep(NA_real_, nrow(resources))
 resources$md5 <- rep(NA_character_, nrow(resources))
 
 for (i in seq_len(nrow(resources))) {
-    source_file <- file.path(source_root, "data", resources$source_file[[i]])
-    if (!file.exists(source_file)) stop("Missing source file: ", source_file)
-    environment <- new.env(parent = emptyenv())
-    loaded <- load(source_file, envir = environment)
-    object_name <- resources$source_object[[i]]
-    if (!object_name %in% loaded) {
-        stop("Object '", object_name, "' is absent from ", source_file)
-    }
-    value <- environment[[object_name]]
     target <- file.path(version_dir, paste0(resources$resource[[i]], ".rds"))
-    if (!file.exists(target)) {
-        saveRDS(value, target, compress = "xz", version = 3L)
+    if (resources$resource[[i]] == "smiles_features") {
+        if (!file.exists(target)) {
+            stop(
+                "Missing precomputed structure resource: ", target,
+                ". Run precompute_smiles_features.R first."
+            )
+        }
+        value <- readRDS(target)
+    } else {
+        source_file <- file.path(source_root, "data", resources$source_file[[i]])
+        if (!file.exists(source_file)) stop("Missing source file: ", source_file)
+        environment <- new.env(parent = emptyenv())
+        loaded <- load(source_file, envir = environment)
+        object_name <- resources$source_object[[i]]
+        if (!object_name %in% loaded) {
+            stop("Object '", object_name, "' is absent from ", source_file)
+        }
+        value <- environment[[object_name]]
+        if (!file.exists(target)) {
+            saveRDS(value, target, compress = "xz", version = 3L)
+        }
     }
     dimensions <- dim(value)
     resources$r_data_class[[i]] <- paste(class(value), collapse = "/")

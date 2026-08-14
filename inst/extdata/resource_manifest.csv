@@ -14,3 +14,4 @@
 "lipidmaps_db","3.0.7","legacy",FALSE,"SpaMTPdb_lipidmaps_db_3.0.7","SpaMTPdb/3.0.7/lipidmaps_db.rds","Lipidmaps_db.rda","Lipidmaps_db","data.frame",9493,37,1971128,8880512,"9be73b858dc1b4332f8bbf84f8e14460"
 "gnps_db","3.0.7","legacy",FALSE,"SpaMTPdb_gnps_db_3.0.7","SpaMTPdb/3.0.7/gnps_db.rds","GNPS_db.rda","GNPS_db","data.frame",489,37,74628,243360,"558a90f94380801038ee9a40dec8d37f"
 "filtered_fmp10","3.0.7","legacy",FALSE,"SpaMTPdb_filtered_fmp10_3.0.7","SpaMTPdb/3.0.7/filtered_fmp10.rds","filtered_fmp10.rda","filtered_fmp10","data.frame",4166,9,54756,1367488,"a7ca0cd5a5b507f09fcd2eca8ffb856a"
+"smiles_features","3.0.7","structure",FALSE,"SpaMTPdb_smiles_features_3.0.7","SpaMTPdb/3.0.7/smiles_features.rds",,"smiles_features","data.frame",284818,36,4252016,161790376,"f492e18843643ef17b037b91f7988ecb"

@@ -7,9 +7,10 @@
 \title{SpaMTPdb: annotation resources for SpaMTP}
 \description{
 \code{SpaMTPdb} provides version-aware access to RaMP-derived chemical,
-identifier, pathway, and pathway-network resources. Large resources are
-retrieved through AnnotationHub; package developers may instead configure a
-directory containing staged \code{.rds} files.
+identifier, pathway, pathway-network, and precomputed SMILES ionisation
+resources. Large resources are retrieved through AnnotationHub; package
+developers may instead configure a directory containing staged \code{.rds}
+files.
 }
 \seealso{
 Useful links:

@@ -31,6 +31,17 @@ Following AnnotationHub ingestion, a resource is loaded and cached with:
 chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
 ```
 
+The pruned RaMP chemical table and the derived structure features remain
+separate. SpaMTP's annotation engine loads and joins the second table by
+`iso_smiles` only when structure-aware ionisation scoring is requested:
+
+```{r eval=FALSE}
+smiles_features <- SpaMTPdbResource(
+  "smiles_features",
+  version = "3.0.7"
+)
+```
+
 Package developers can stage the resources locally and configure:
 
 ```{r eval=FALSE}

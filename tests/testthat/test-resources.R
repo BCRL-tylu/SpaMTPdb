@@ -20,3 +20,10 @@ test_that("metadata lookup does not download data", {
     expect_identical(metadata$version, "3.0.7")
     expect_identical(metadata$category, "core")
 })
+
+test_that("SMILES features remain an independent structure resource", {
+    metadata <- SpaMTPdbResource("smiles_features", metadata = TRUE)
+    expect_identical(metadata$category, "structure")
+    expect_false(metadata$default)
+    expect_identical(metadata$r_data_class, "data.frame")
+})
