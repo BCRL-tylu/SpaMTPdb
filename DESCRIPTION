@@ -14,9 +14,11 @@ Description: Provides lightweight, version-aware access to the annotation
     resources used by SpaMTP. Resources include pruned RaMP chemical,
     identifier, pathway, and pathway-topology tables, precomputed SMILES
     functional-group and ionisation features, and legacy metabolite reference
-    tables. Large files are distributed through
-    AnnotationHub rather than bundled in the package, while a local resource
-    directory can be used for development and reproducible database builds.
+    tables. Resource files are published on Zenodo and registered with
+    AnnotationHub rather than bundled in the package. Retrieved files are
+    verified against recorded sizes and checksums and cached for reuse, and a
+    local resource directory can be used for development and reproducible
+    database builds.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:
@@ -28,6 +30,8 @@ Imports:
 Suggests:
     AnnotationHubData,
     BiocStyle,
+    httr2,
+    jsonlite,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)

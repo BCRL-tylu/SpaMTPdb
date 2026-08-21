@@ -1,7 +1,7 @@
 ---
 title: "Accessing SpaMTP Annotation Resources"
 author: "Tianyao Lu"
-date: "2026-08-14"
+date: "`r Sys.Date()`"
 output:
   BiocStyle::html_document:
     toc: true
@@ -11,11 +11,20 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r knitr-options, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
 # Introduction
 
 `SpaMTPdb` separates versioned RaMP and metabolite annotation resources from
 the SpaMTP software package. This keeps the software package small while
 allowing analyses to record and reproduce the exact database snapshot used.
+
+Each resource is an independent serialised object, so an analysis downloads
+only the components it needs. Resource versions are immutable: future RaMP
+releases are added as new versions rather than replacing the RaMP 3.0.7
+snapshot.
 
 ```{r setup}
 library(SpaMTPdb)
@@ -23,9 +32,32 @@ resources <- SpaMTPdbResources(version = "latest")
 resources[c("resource", "version", "category", "default")]
 ```
 
-# Loading resources
+# Where the resources are stored
 
-Inspect a resource without downloading it:
+The processed resource files are published on Zenodo and registered with
+`r BiocStyle::Biocpkg("AnnotationHub")`. The manifest records, for every
+resource, the download location together with the size and MD5 checksum used
+to verify a retrieved file.
+
+```{r resource-locations}
+resources[c("resource", "file_name", "bytes", "md5")]
+```
+
+`SpaMTPdbResource()` resolves a resource in three steps, taking the first that
+succeeds:
+
+1. a staged local directory, for development and reproducible database builds;
+2. the matching AnnotationHub record;
+3. the immutable Zenodo source URL recorded in the manifest.
+
+The third step means the package remains usable before the Hub records are
+published, and every file retrieved that way is checked against its recorded
+size and MD5 checksum before use.
+
+# Inspecting resources without downloading
+
+Passing `metadata = TRUE` returns the registry row and never touches the
+network:
 
 ```{r inspect-chemical-resource}
 chem_props_metadata <- SpaMTPdbResource(
@@ -33,14 +65,7 @@ chem_props_metadata <- SpaMTPdbResource(
   version = "3.0.7",
   metadata = TRUE
 )
-chem_props_metadata[c("resource", "version", "rows", "columns")]
-```
-
-Following AnnotationHub ingestion, omit `metadata = TRUE` to retrieve and cache
-the R object:
-
-```r
-chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
+chem_props_metadata[c("resource", "version", "rows", "columns", "bytes")]
 ```
 
 The pruned RaMP chemical table and the derived structure features remain
@@ -56,11 +81,68 @@ smiles_features_metadata <- SpaMTPdbResource(
 smiles_features_metadata[c("resource", "version", "rows", "columns")]
 ```
 
-Package developers can stage the resources locally and configure:
+# Retrieving a resource
+
+Omit `metadata = TRUE` to retrieve and cache the R object. The provenance
+resource is small, so it is a convenient illustration of a real retrieval:
+
+```{r retrieve-metadata-resource}
+ramp_db_metadata <- try(
+  SpaMTPdbResource("ramp_db_metadata", version = "3.0.7"),
+  silent = TRUE
+)
+if (inherits(ramp_db_metadata, "try-error")) {
+  message("Resource retrieval skipped: no network access available.")
+} else {
+  str(ramp_db_metadata, max.level = 1)
+}
+```
+
+Larger resources are retrieved the same way. The chemical property table backs
+the indexed MS1 annotation engine:
+
+```r
+chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
+```
+
+Downloads are cached, so repeated calls in an analysis resolve from disk. Use
+`cache_dir` to override the default user cache returned by
+`tools::R_user_dir()`.
+
+# Retrieving a coherent bundle
+
+`SpaMTPdbBundle()` returns several resources from one database version, which
+keeps identifiers consistent across an analysis:
+
+```{r bundle-metadata}
+bundle <- SpaMTPdbBundle(
+  resources = c("chem_props", "pathway"),
+  version = "3.0.7",
+  metadata = TRUE
+)
+vapply(bundle, function(row) row$title, character(1))
+```
+
+# Working from a staged directory
+
+Package developers and reproducible database builds can stage the resources
+locally and bypass both the Hub and Zenodo entirely:
 
 ```r
 options(SpaMTPdb.resource_dir = "/path/to/SpaMTPdb-resources/3.0.7")
 core <- SpaMTPdbBundle()
+```
+
+Setting `offline = TRUE` makes a missing local file an error rather than a
+download, which is useful on machines without outbound network access.
+
+# Recording the version used
+
+`SpaMTPdbVersion()` reports the available snapshots, newest first. Recording
+this value alongside an analysis makes the annotation step reproducible:
+
+```{r versions}
+SpaMTPdbVersion()
 ```
 
 # Session information

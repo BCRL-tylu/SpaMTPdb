@@ -1,5 +1,9 @@
 .spamtpdb_manifest <- function() {
-    path <- system.file("extdata", "resource_manifest.csv", package = "SpaMTPdb")
+    ## The manifest lives outside inst/extdata because AnnotationHubData reads
+    ## every CSV in that directory as Hub metadata.
+    path <- system.file(
+        "manifest", "resource_manifest.csv", package = "SpaMTPdb"
+    )
     if (!nzchar(path)) {
         stop("SpaMTPdb resource manifest is unavailable.", call. = FALSE)
     }
@@ -9,7 +13,8 @@
 .spamtpdb_resolve_version <- function(manifest, version) {
     versions <- unique(as.character(manifest$version))
     if (is.null(version) || identical(version, "latest")) {
-        return(utils::tail(sort(package_version(versions)), 1L) |> as.character())
+        latest <- utils::tail(sort(package_version(versions)), 1L)
+        return(as.character(latest))
     }
     version <- as.character(version)[1L]
     if (!version %in% versions) {
@@ -30,19 +35,126 @@
     if (!nzchar(configured)) {
         configured <- Sys.getenv("SPAMTPDB_RESOURCE_DIR", "")
     }
-    if (!nzchar(configured)) NULL else normalizePath(configured, mustWork = FALSE)
+    if (!nzchar(configured)) {
+        NULL
+    } else {
+        normalizePath(configured, mustWork = FALSE)
+    }
 }
 
 .spamtpdb_local_file <- function(row, local_dir) {
     if (is.null(local_dir)) return(NULL)
     candidates <- unique(c(
-        file.path(local_dir, basename(row$rdata_path)),
-        file.path(local_dir, row$rdata_path),
+        file.path(local_dir, row$file_name),
+        file.path(local_dir, row$version, row$file_name),
         file.path(local_dir, paste0(row$resource, "_", row$version, ".rds")),
         file.path(local_dir, paste0(row$resource, ".rds"))
     ))
     found <- candidates[file.exists(candidates)]
     if (length(found)) found[[1L]] else NULL
+}
+
+.spamtpdb_read_local <- function(path, dispatch_class) {
+    if (tolower(dispatch_class) %in% c("rds", "rda")) {
+        if (tolower(dispatch_class) == "rds") return(readRDS(path))
+        environment <- new.env(parent = emptyenv())
+        loaded <- load(path, envir = environment)
+        if (length(loaded) != 1L) {
+            stop(
+                "Local Rda resource must contain exactly one object.",
+                call. = FALSE
+            )
+        }
+        return(environment[[loaded]])
+    }
+    normalizePath(path, mustWork = TRUE)
+}
+
+.spamtpdb_cache_dir <- function(cache_dir = NULL) {
+    if (is.null(cache_dir)) {
+        cache_dir <- getOption("SpaMTPdb.cache_dir", "")
+    }
+    if (!nzchar(cache_dir)) {
+        cache_dir <- Sys.getenv("SPAMTPDB_CACHE_DIR", "")
+    }
+    if (!nzchar(cache_dir)) {
+        cache_dir <- tools::R_user_dir("SpaMTPdb", which = "cache")
+    }
+    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+    normalizePath(cache_dir, mustWork = TRUE)
+}
+
+.spamtpdb_file_valid <- function(path, row) {
+    if (!file.exists(path)) return(FALSE)
+    expected_bytes <- suppressWarnings(as.numeric(row$bytes[[1L]]))
+    if (is.finite(expected_bytes) && file.info(path)$size != expected_bytes) {
+        return(FALSE)
+    }
+    expected_md5 <- tolower(as.character(row$md5[[1L]]))
+    if (nzchar(expected_md5)) {
+        observed_md5 <- unname(tools::md5sum(path))
+        if (!identical(tolower(observed_md5), expected_md5)) return(FALSE)
+    }
+    TRUE
+}
+
+.spamtpdb_download <- function(row, cache_dir = NULL, timeout = 1800,
+                               retries = 3L) {
+    cache_dir <- .spamtpdb_cache_dir(cache_dir)
+    version_dir <- file.path(cache_dir, as.character(row$version[[1L]]))
+    dir.create(version_dir, recursive = TRUE, showWarnings = FALSE)
+    destination <- file.path(version_dir, as.character(row$file_name[[1L]]))
+    if (.spamtpdb_file_valid(destination, row)) return(destination)
+
+    url <- paste0(
+        as.character(row$location_prefix[[1L]]),
+        as.character(row$rdata_path[[1L]])
+    )
+    retries <- suppressWarnings(as.integer(retries)[1L])
+    if (is.na(retries) || retries < 1L) retries <- 1L
+    timeout <- suppressWarnings(as.numeric(timeout)[1L])
+    if (!is.finite(timeout) || timeout < 1) timeout <- 1800
+    old_timeout <- getOption("timeout")
+    old_timeout_numeric <- suppressWarnings(as.numeric(old_timeout)[1L])
+    if (!is.finite(old_timeout_numeric)) old_timeout_numeric <- 60
+    options(timeout = max(old_timeout_numeric, timeout))
+    on.exit(options(timeout = old_timeout), add = TRUE)
+
+    last_error <- NULL
+    for (attempt in seq_len(retries)) {
+        partial <- paste0(destination, ".part-", Sys.getpid())
+        on.exit(unlink(partial), add = TRUE)
+        result <- tryCatch(
+            {
+                utils::download.file(
+                    url,
+                    destfile = partial,
+                    method = "libcurl",
+                    mode = "wb",
+                    quiet = TRUE
+                )
+                if (!.spamtpdb_file_valid(partial, row)) {
+                    stop("downloaded file failed its size or MD5 check")
+                }
+                if (file.exists(destination)) unlink(destination)
+                if (!file.rename(partial, destination)) {
+                    stop("could not move the verified file into the cache")
+                }
+                destination
+            },
+            error = function(error) {
+                last_error <<- conditionMessage(error)
+                unlink(partial)
+                NULL
+            }
+        )
+        if (!is.null(result)) return(result)
+    }
+    stop(
+        "Failed to download verified SpaMTPdb resource '", row$resource,
+        "' after ", retries, " attempt(s): ", last_error,
+        call. = FALSE
+    )
 }
 
 .spamtpdb_check_class <- function(value, row) {
@@ -94,17 +206,25 @@ SpaMTPdbResources <- function(version = NULL, category = NULL,
 
 #' Retrieve one SpaMTP annotation resource
 #'
-#' Resources are first resolved from `local_dir`, the
+#' Resources are resolved in order: a staged local directory (`local_dir`, the
 #' `SpaMTPdb.resource_dir` option, or the `SPAMTPDB_RESOURCE_DIR` environment
-#' variable. If no local file exists, the matching AnnotationHub record is
-#' retrieved and cached by AnnotationHub.
+#' variable), then the matching AnnotationHub record, and finally the immutable
+#' Zenodo source URL recorded in the resource manifest. Files retrieved from
+#' Zenodo are verified against the recorded size and MD5 checksum and cached
+#' for reuse.
 #'
 #' @param resource Resource name; see [SpaMTPdbResources()].
 #' @param version Resource version or `"latest"`.
 #' @param local_dir Optional directory containing staged `.rds` resources.
 #' @param hub Optional pre-created `AnnotationHub` object.
 #' @param metadata Return the registry row without loading the resource.
-#' @param offline If `TRUE`, never query AnnotationHub.
+#' @param offline If `TRUE`, never query AnnotationHub or Zenodo.
+#' @param fallback_url If `TRUE`, use the immutable Zenodo source URL when the
+#'   resource has not yet been ingested into AnnotationHub.
+#' @param cache_dir Cache directory for source-URL downloads. Defaults to the
+#'   platform-specific user cache returned by [tools::R_user_dir()].
+#' @param timeout Download timeout in seconds for the source-URL fallback.
+#' @param retries Number of verified download attempts.
 #'
 #' @return The requested R object, or its registry row when `metadata = TRUE`.
 #' @export
@@ -112,7 +232,9 @@ SpaMTPdbResources <- function(version = NULL, category = NULL,
 #' @examples
 #' SpaMTPdbResource("chem_props", metadata = TRUE)
 SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
-                             hub = NULL, metadata = FALSE, offline = FALSE) {
+                             hub = NULL, metadata = FALSE, offline = FALSE,
+                             fallback_url = TRUE, cache_dir = NULL,
+                             timeout = 1800, retries = 3L) {
     manifest <- .spamtpdb_manifest()
     version <- .spamtpdb_resolve_version(manifest, version)
     key <- tolower(as.character(resource)[1L])
@@ -131,7 +253,9 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
 
     local_file <- .spamtpdb_local_file(rows, .spamtpdb_local_dir(local_dir))
     if (!is.null(local_file)) {
-        return(.spamtpdb_check_class(readRDS(local_file), rows))
+        return(.spamtpdb_check_class(
+            .spamtpdb_read_local(local_file, rows$dispatch_class), rows
+        ))
     }
     if (isTRUE(offline)) {
         stop(
@@ -141,19 +265,40 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
         )
     }
 
-    if (is.null(hub)) hub <- AnnotationHub::AnnotationHub()
-    hits <- AnnotationHub::query(hub, c("SpaMTPdb", rows$title))
-    hit_metadata <- as.data.frame(S4Vectors::mcols(hits))
-    exact <- which(as.character(hit_metadata$title) == rows$title)
-    if (!length(exact)) {
-        stop(
-            "AnnotationHub does not yet contain '", rows$title, "'. Configure ",
-            "options(SpaMTPdb.resource_dir = ...) for a staged development ",
-            "resource.",
-            call. = FALSE
+    hub_error <- NULL
+    value <- tryCatch(
+        {
+            if (is.null(hub)) hub <- AnnotationHub::AnnotationHub()
+            hits <- AnnotationHub::query(hub, c("SpaMTPdb", rows$title))
+            hit_metadata <- as.data.frame(S4Vectors::mcols(hits))
+            exact <- which(as.character(hit_metadata$title) == rows$title)
+            if (!length(exact)) {
+                stop("resource has not yet been ingested into AnnotationHub")
+            }
+            hits[[exact[[1L]]]]
+        },
+        error = function(error) {
+            hub_error <<- conditionMessage(error)
+            NULL
+        }
+    )
+    if (!is.null(value)) return(.spamtpdb_check_class(value, rows))
+    if (isTRUE(fallback_url)) {
+        path <- .spamtpdb_download(
+            rows,
+            cache_dir = cache_dir,
+            timeout = timeout,
+            retries = retries
         )
+        return(.spamtpdb_check_class(
+            .spamtpdb_read_local(path, rows$dispatch_class), rows
+        ))
     }
-    .spamtpdb_check_class(hits[[exact[[1L]]]], rows)
+    stop(
+        "AnnotationHub could not provide '", rows$title, "': ", hub_error,
+        ". Configure a local resource directory or set fallback_url = TRUE.",
+        call. = FALSE
+    )
 }
 
 #' Retrieve a coherent set of SpaMTP annotation resources
@@ -169,7 +314,9 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
 #' @examples
 #' SpaMTPdbBundle(resources = "chem_props", metadata = TRUE)
 SpaMTPdbBundle <- function(
-    resources = SpaMTPdbResources(version = "latest", default_only = TRUE)$resource,
+    resources = SpaMTPdbResources(
+        version = "latest", default_only = TRUE
+    )$resource,
     version = "latest", ...
 ) {
     result <- lapply(

@@ -10,7 +10,11 @@ SpaMTPdbResource(
   local_dir = NULL,
   hub = NULL,
   metadata = FALSE,
-  offline = FALSE
+  offline = FALSE,
+  fallback_url = TRUE,
+  cache_dir = NULL,
+  timeout = 1800,
+  retries = 3L
 )
 }
 \arguments{
@@ -24,16 +28,28 @@ SpaMTPdbResource(
 
 \item{metadata}{Return the registry row without loading the resource.}
 
-\item{offline}{If \code{TRUE}, never query AnnotationHub.}
+\item{offline}{If \code{TRUE}, never query AnnotationHub or Zenodo.}
+
+\item{fallback_url}{If \code{TRUE}, use the immutable Zenodo source URL when the
+resource has not yet been ingested into AnnotationHub.}
+
+\item{cache_dir}{Cache directory for source-URL downloads. Defaults to the
+platform-specific user cache returned by \code{\link[tools:R_user_dir]{tools::R_user_dir()}}.}
+
+\item{timeout}{Download timeout in seconds for the source-URL fallback.}
+
+\item{retries}{Number of verified download attempts.}
 }
 \value{
 The requested R object, or its registry row when \code{metadata = TRUE}.
 }
 \description{
-Resources are first resolved from \code{local_dir}, the
+Resources are resolved in order: a staged local directory (\code{local_dir}, the
 \code{SpaMTPdb.resource_dir} option, or the \code{SPAMTPDB_RESOURCE_DIR} environment
-variable. If no local file exists, the matching AnnotationHub record is
-retrieved and cached by AnnotationHub.
+variable), then the matching AnnotationHub record, and finally the immutable
+Zenodo source URL recorded in the resource manifest. Files retrieved from
+Zenodo are verified against the recorded size and MD5 checksum and cached
+for reuse.
 }
 \examples{
 SpaMTPdbResource("chem_props", metadata = TRUE)
