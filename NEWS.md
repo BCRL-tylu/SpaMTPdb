@@ -1,3 +1,10 @@
+# SpaMTPdb 0.99.1
+
+* Version bump only. The Zenodo download fallback shipped inside 0.99.0, so an
+  installation cached by version alone could still hold the pre-Zenodo build
+  that failed with "AnnotationHub does not yet contain ...". Bumping the version
+  lets those caches invalidate.
+
 # SpaMTPdb 0.99.0
 
 * Initial Bioconductor submission scaffold.
