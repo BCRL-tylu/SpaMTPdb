@@ -1,5 +1,24 @@
 # SpaMTPdb
 
+Human gene identifier reference (SpaMTPdb >= 0.99.4):
+
+```r
+# Metadata lookup is offline; retrieval uses a fixed verified HGNC archive.
+spaMTPdbGeneReference(metadata = TRUE)
+reference <- spaMTPdbGeneReference(
+  version = "2026.7.7", local_dir = "/path/to/gene-reference", offline = TRUE
+)
+```
+
+The HGNC quarterly TSV is an auxiliary annotation resource with a separate
+version registry in `inst/manifest/gene_reference_manifest.csv`. Its official
+archive URL, byte size and MD5 are pinned. The file is external and can be
+staged under `<local_dir>/2026.7.7/`; the resource has its own
+`SpaMTPdb.gene_reference_dir` option and `SPAMTPDB_GENE_REFERENCE_DIR` environment
+variable. The existing RaMP registry and published files retain their versions
+and hashes. SpaMTP >= 0.99.5 uses this reference to reconcile gene identities;
+the experiment resources and their species remain owned by SpaMTPData.
+
 `SpaMTPdb` is the versioned annotation-data companion to
 [`SpaMTP`](https://github.com/SpaMTP-project/SpaMTP). It keeps large
 RaMP/MS1/pathway resources outside the SpaMTP software package and retrieves

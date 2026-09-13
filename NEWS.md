@@ -1,3 +1,12 @@
+# SpaMTPdb 0.99.4
+
+* Added `spaMTPdbGeneReference()` for a versioned HGNC quarterly archive with
+  approved/previous/alias symbols and stable gene identifiers. The reference
+  is retrieved from the official fixed archive and verified locally or in the
+  cache; no changing current-file or live symbol lookup is used.
+* HGNC versions and provenance are separate from the existing RaMP 3.0.7
+  registry. Experiment resources remain owned by SpaMTPData.
+
 # SpaMTPdb 0.99.3
 
 * Added a maintainer-only shared release workflow for annotation database and

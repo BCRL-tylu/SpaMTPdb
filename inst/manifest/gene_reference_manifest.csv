@@ -1,0 +1,2 @@
+resource,version,organism,taxonomy_id,title,file_name,location_prefix,rdata_path,source_url,bytes,md5
+hgnc_gene_reference,2026.7.7,Homo sapiens,9606,SpaMTPdb_HGNC_2026.7.7,hgnc_complete_set_2026-07-07.tsv,https://storage.googleapis.com/public-download-files/hgnc/archive/archive/quarterly/tsv/,hgnc_complete_set_2026-07-07.tsv,https://www.genenames.org/download/archive/,16913890,cd41d33955722de9ac0e14a2557ef5fc
