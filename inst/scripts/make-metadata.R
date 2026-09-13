@@ -5,7 +5,7 @@
 ## Usage:
 ##   Rscript inst/scripts/make-metadata.R [--validate-only]
 ##
-## The Hub record for each resource is derived from inst/extdata/resource_manifest.csv,
+## The Hub record for each resource is derived from inst/manifest/resource_manifest.csv,
 ## which stage_resources.R writes after staging the files and recording the
 ## Zenodo record that hosts them. The resource files are hosted on Zenodo rather
 ## than in the Bioconductor Hub bucket, so Location_Prefix points at the Zenodo
@@ -181,5 +181,5 @@ if (!validate_only) {
 if (!requireNamespace("AnnotationHubData", quietly = TRUE)) {
     stop("Install AnnotationHubData before validating Hub metadata.", call. = FALSE)
 }
-AnnotationHubData::makeAnnotationHubMetadata(package_root)
+AnnotationHubData::makeAnnotationHubMetadata(package_root, fileName = "metadata.csv")
 message("makeAnnotationHubMetadata() validated ", metadata_path, ".")

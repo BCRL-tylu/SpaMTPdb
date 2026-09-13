@@ -1,0 +1,62 @@
+{
+  "base_record_id": "22045311",
+  "concept_record_id": "22045310",
+  "base_version": "3.0.7",
+  "title": "SpaMTP shared resources: annotation databases and native spatial experiment datasets",
+  "license": "cc-by-4.0",
+  "creators": [
+    {
+      "name": "Causer, Andrew",
+      "orcid": "0009-0001-7341-8366"
+    },
+    {
+      "name": "Lu, Tianyao"
+    },
+    {
+      "name": "Nguyen, Quan"
+    }
+  ],
+  "database_source": {
+    "record_url": "https://zenodo.org/records/22045311",
+    "doi": "10.5281/zenodo.22045311",
+    "title": "SpaMTPdb: versioned annotation resources for SpaMTP (RaMP-DB 3.0.7 snapshot)",
+    "version": "3.0.7",
+    "creators": [
+      {
+        "name": "Lu, Tianyao",
+        "affiliation": "WEHI"
+      },
+      {
+        "name": "Causer, Andrew",
+        "affiliation": null
+      }
+    ],
+    "license": {
+      "id": "cc-by-4.0"
+    },
+    "related_identifiers": [
+      {
+        "identifier": "10.1038/s41592-026-03140-8",
+        "relation": "isSupplementTo",
+        "scheme": "doi"
+      },
+      {
+        "identifier": "https://github.com/ncats/RaMP-DB",
+        "relation": "isDerivedFrom",
+        "scheme": "url"
+      }
+    ]
+  },
+  "related_identifiers": [
+    {
+      "identifier": "10.1038/s41592-026-03140-8",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "https://github.com/ncats/RaMP-DB",
+      "relation": "isDerivedFrom",
+      "scheme": "url"
+    }
+  ]
+}

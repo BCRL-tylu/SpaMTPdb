@@ -1,11 +1,11 @@
 #!/usr/bin/env Rscript
 
-## Stage the SpaMTPdb resource files and regenerate inst/extdata/resource_manifest.csv.
+## Stage SpaMTPdb resources and regenerate inst/manifest/resource_manifest.csv.
 ##
 ## Usage:
 ##   Rscript inst/scripts/stage_resources.R [source_root] [output_root] [version] [record_id]
 ##
-## source_root  Checkout of the SpaMTP software package holding the original
+## source_root  Explicit archival SpaMTP checkout holding the original
 ##              data/*.rda objects. Only consulted when a staged .rds file is
 ##              missing, so a completed staging directory can be re-described
 ##              without the original sources.
@@ -19,7 +19,7 @@
 ## to verify each cached file.
 
 args <- commandArgs(trailingOnly = TRUE)
-source_root <- if (length(args) >= 1L) args[[1L]] else "../SpaMTP"
+source_root <- if (length(args) >= 1L) args[[1L]] else "../SpaMTP-bioc-main"
 output_root <- if (length(args) >= 2L) args[[2L]] else "../SpaMTPdb-resources"
 version <- if (length(args) >= 3L) args[[3L]] else "3.0.7"
 record_id <- if (length(args) >= 4L) {
@@ -31,8 +31,7 @@ record_id <- if (length(args) >= 4L) {
 if (!nzchar(record_id)) {
     stop(
         "No Zenodo record ID supplied. Pass it as the fourth argument or set ",
-        "SPAMTPDB_ZENODO_RECORD. Run inst/scripts/zenodo_upload.R first to ",
-        "create the deposition.",
+        "SPAMTPDB_ZENODO_RECORD. Use a published record, never a draft ID.",
         call. = FALSE
     )
 }
@@ -88,6 +87,16 @@ previous <- if (file.exists(manifest_path)) {
     NULL
 }
 
+if (!is.null(previous)) {
+    registered <- previous[as.character(previous$version) == version, , drop = FALSE]
+    expected_prefix <- paste0("https://zenodo.org/api/records/", record_id, "/files/")
+    if (nrow(registered) && any(registered$location_prefix != expected_prefix)) {
+        stop("This resource version already has a fixed published location. ",
+             "Do not repoint it to a shared collection or another draft/version.",
+             call. = FALSE)
+    }
+}
+
 describe <- function(value) {
     dimensions <- dim(value)
     list(
@@ -119,7 +128,10 @@ for (i in seq_len(nrow(resources))) {
             resources$source_file[[i]]
         )
         if (!file.exists(source_file)) {
-            stop("Missing source file: ", source_file, call. = FALSE)
+            stop("Missing source file: ", source_file,
+                 ". The Bioconductor software package no longer bundles databases. ",
+                 "Provide an explicit archival source checkout or pre-stage versioned resources.",
+                 call. = FALSE)
         }
         environment <- new.env(parent = emptyenv())
         loaded <- load(source_file, envir = environment)
@@ -186,6 +198,17 @@ resources <- resources[c(
     "source_object", "r_data_class", "dispatch_class", "rows", "columns",
     "bytes", "object_bytes", "md5"
 )]
+if (!is.null(previous)) {
+    same_version <- previous[as.character(previous$version) == version, , drop = FALSE]
+    index <- match(same_version$resource, resources$resource)
+    if (anyNA(index) || any(same_version$md5 != resources$md5[index]) ||
+        any(same_version$bytes != resources$bytes[index])) {
+        stop("Staged files differ from the registered resource version. ",
+             "Use a new version rather than replacing an immutable snapshot.", call. = FALSE)
+    }
+    older <- previous[as.character(previous$version) != version, , drop = FALSE]
+    if (nrow(older)) resources <- rbind(older[, names(resources), drop = FALSE], resources)
+}
 utils::write.csv(resources, manifest_path, row.names = FALSE, na = "")
 message(
     "Wrote ", manifest_path, " for Zenodo record ", record_id,

@@ -7,13 +7,13 @@
     if (!nzchar(path)) {
         stop("SpaMTPdb resource manifest is unavailable.", call. = FALSE)
     }
-    utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+    read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
 }
 
 .spamtpdb_resolve_version <- function(manifest, version) {
     versions <- unique(as.character(manifest$version))
     if (is.null(version) || identical(version, "latest")) {
-        latest <- utils::tail(sort(package_version(versions)), 1L)
+        latest <- tail(sort(package_version(versions)), 1L)
         return(as.character(latest))
     }
     version <- as.character(version)[1L]
@@ -45,8 +45,8 @@
 .spamtpdb_local_file <- function(row, local_dir) {
     if (is.null(local_dir)) return(NULL)
     candidates <- unique(c(
-        file.path(local_dir, row$file_name),
         file.path(local_dir, row$version, row$file_name),
+        file.path(local_dir, row$file_name),
         file.path(local_dir, paste0(row$resource, "_", row$version, ".rds")),
         file.path(local_dir, paste0(row$resource, ".rds"))
     ))
@@ -70,7 +70,7 @@
     normalizePath(path, mustWork = TRUE)
 }
 
-.spamtpdb_cache_dir <- function(cache_dir = NULL) {
+.spamtpdb_cache_dir <- function(cache_dir = NULL, create = TRUE) {
     if (is.null(cache_dir)) {
         cache_dir <- getOption("SpaMTPdb.cache_dir", "")
     }
@@ -80,22 +80,38 @@
     if (!nzchar(cache_dir)) {
         cache_dir <- tools::R_user_dir("SpaMTPdb", which = "cache")
     }
-    dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-    normalizePath(cache_dir, mustWork = TRUE)
+    if (create) dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+    normalizePath(cache_dir, mustWork = create)
 }
 
 .spamtpdb_file_valid <- function(path, row) {
-    if (!file.exists(path)) return(FALSE)
+    if (!file.exists(path) || isTRUE(file.info(path)$isdir)) return(FALSE)
     expected_bytes <- suppressWarnings(as.numeric(row$bytes[[1L]]))
-    if (is.finite(expected_bytes) && file.info(path)$size != expected_bytes) {
+    if (length(expected_bytes) != 1L || !is.finite(expected_bytes) ||
+        expected_bytes <= 0 || file.info(path)$size != expected_bytes) {
         return(FALSE)
     }
     expected_md5 <- tolower(as.character(row$md5[[1L]]))
-    if (nzchar(expected_md5)) {
-        observed_md5 <- unname(tools::md5sum(path))
-        if (!identical(tolower(observed_md5), expected_md5)) return(FALSE)
+    if (length(expected_md5) != 1L || is.na(expected_md5) ||
+        !grepl("^[0-9a-f]{32}$", expected_md5)) return(FALSE)
+    identical(tolower(unname(tools::md5sum(path))), expected_md5)
+}
+
+.spamtpdb_cached_file <- function(row, cache_dir = NULL) {
+    root <- .spamtpdb_cache_dir(cache_dir, create = FALSE)
+    paths <- c(file.path(root, row$version, row$file_name),
+               file.path(root, row$file_name))
+    valid <- vapply(paths, .spamtpdb_file_valid, logical(1), row = row)
+    if (any(valid)) paths[which(valid)[1L]] else NULL
+}
+
+.spamtpdb_verify_local <- function(path, row, verify) {
+    if (verify && !.spamtpdb_file_valid(path, row)) {
+        stop("Local resource '", row$resource, "' failed its size or MD5 check. ",
+             "Use verify = FALSE only for intentional development fixtures, ",
+             "not to label modified data as an official release.", call. = FALSE)
     }
-    TRUE
+    path
 }
 
 .spamtpdb_download <- function(row, cache_dir = NULL, timeout = 1800,
@@ -126,7 +142,7 @@
         on.exit(unlink(partial), add = TRUE)
         result <- tryCatch(
             {
-                utils::download.file(
+                download.file(
                     url,
                     destfile = partial,
                     method = "libcurl",
@@ -186,8 +202,8 @@
 #' @export
 #'
 #' @examples
-#' SpaMTPdbResources(default_only = TRUE)
-SpaMTPdbResources <- function(version = NULL, category = NULL,
+#' spaMTPdbResources(default_only = TRUE)
+spaMTPdbResources <- function(version = NULL, category = NULL,
                               default_only = FALSE) {
     manifest <- .spamtpdb_manifest()
     if (!is.null(version)) {
@@ -208,33 +224,44 @@ SpaMTPdbResources <- function(version = NULL, category = NULL,
 #'
 #' Resources are resolved in order: a staged local directory (`local_dir`, the
 #' `SpaMTPdb.resource_dir` option, or the `SPAMTPDB_RESOURCE_DIR` environment
-#' variable), then the matching AnnotationHub record, and finally the immutable
+#' variable), a verified download cache, then the matching AnnotationHub record,
+#' and finally the immutable
 #' Zenodo source URL recorded in the resource manifest. Files retrieved from
-#' Zenodo are verified against the recorded size and MD5 checksum and cached
-#' for reuse.
+#' Zenodo and local files are verified against the recorded size and MD5
+#' checksum. The verified download cache is usable with `offline = TRUE`.
 #'
-#' @param resource Resource name; see [SpaMTPdbResources()].
+#' @param resource Resource name; see [spaMTPdbResources()].
 #' @param version Resource version or `"latest"`.
 #' @param local_dir Optional directory containing staged `.rds` resources.
 #' @param hub Optional pre-created `AnnotationHub` object.
 #' @param metadata Return the registry row without loading the resource.
-#' @param offline If `TRUE`, never query AnnotationHub or Zenodo.
+#' @param offline If `TRUE`, use local files or a verified cache only; never
+#'   query AnnotationHub or Zenodo.
 #' @param fallback_url If `TRUE`, use the immutable Zenodo source URL when the
 #'   resource has not yet been ingested into AnnotationHub.
 #' @param cache_dir Cache directory for source-URL downloads. Defaults to the
 #'   platform-specific user cache returned by [tools::R_user_dir()].
 #' @param timeout Download timeout in seconds for the source-URL fallback.
 #' @param retries Number of verified download attempts.
+#' @param verify Verify local files against the published size and checksum.
+#'   Set to `FALSE` only for intentional development fixtures. Downloaded and
+#'   cached files are always verified; loaded object classes are always checked.
 #'
 #' @return The requested R object, or its registry row when `metadata = TRUE`.
 #' @export
 #'
 #' @examples
-#' SpaMTPdbResource("chem_props", metadata = TRUE)
-SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
+#' spaMTPdbResource("chem_props", metadata = TRUE)
+spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
                              hub = NULL, metadata = FALSE, offline = FALSE,
                              fallback_url = TRUE, cache_dir = NULL,
-                             timeout = 1800, retries = 3L) {
+                             timeout = 1800, retries = 3L, verify = TRUE) {
+    if (length(resource) != 1L || is.na(resource) || !nzchar(trimws(resource))) {
+        stop("resource must be one non-empty name.", call. = FALSE)
+    }
+    if (!is.logical(verify) || length(verify) != 1L || is.na(verify)) {
+        stop("verify must be TRUE or FALSE.", call. = FALSE)
+    }
     manifest <- .spamtpdb_manifest()
     version <- .spamtpdb_resolve_version(manifest, version)
     key <- tolower(as.character(resource)[1L])
@@ -245,7 +272,7 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
     if (nrow(rows) != 1L) {
         stop(
             "Unknown SpaMTPdb resource '", resource, "' for version ",
-            version, ". Use SpaMTPdbResources() to list valid names.",
+            version, ". Use spaMTPdbResources() to list valid names.",
             call. = FALSE
         )
     }
@@ -253,14 +280,20 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
 
     local_file <- .spamtpdb_local_file(rows, .spamtpdb_local_dir(local_dir))
     if (!is.null(local_file)) {
+        .spamtpdb_verify_local(local_file, rows, verify)
         return(.spamtpdb_check_class(
             .spamtpdb_read_local(local_file, rows$dispatch_class), rows
         ))
     }
+    cached <- .spamtpdb_cached_file(rows, cache_dir)
+    if (!is.null(cached)) {
+        return(.spamtpdb_check_class(
+            .spamtpdb_read_local(cached, rows$dispatch_class), rows))
+    }
     if (isTRUE(offline)) {
         stop(
             "Resource '", resource, "' is not present in the configured local ",
-            "directory and offline = TRUE.",
+            "directory or verified cache and offline = TRUE.",
             call. = FALSE
         )
     }
@@ -268,9 +301,9 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
     hub_error <- NULL
     value <- tryCatch(
         {
-            if (is.null(hub)) hub <- AnnotationHub::AnnotationHub()
-            hits <- AnnotationHub::query(hub, c("SpaMTPdb", rows$title))
-            hit_metadata <- as.data.frame(S4Vectors::mcols(hits))
+            if (is.null(hub)) hub <- AnnotationHub()
+            hits <- query(hub, c("SpaMTPdb", rows$title))
+            hit_metadata <- as.data.frame(mcols(hits))
             exact <- which(as.character(hit_metadata$title) == rows$title)
             if (!length(exact)) {
                 stop("resource has not yet been ingested into AnnotationHub")
@@ -306,22 +339,24 @@ SpaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
 #' @param resources Character vector of resource names. By default, all core
 #'   resources used by SpaMTP are returned.
 #' @param version Resource version or `"latest"`.
-#' @param ... Passed to [SpaMTPdbResource()].
+#' @param ... Passed to [spaMTPdbResource()].
 #'
 #' @return A named list of resources from one database version.
 #' @export
 #'
 #' @examples
-#' SpaMTPdbBundle(resources = "chem_props", metadata = TRUE)
-SpaMTPdbBundle <- function(
-    resources = SpaMTPdbResources(
-        version = "latest", default_only = TRUE
-    )$resource,
+#' spaMTPdbBundle(resources = "chem_props", metadata = TRUE)
+spaMTPdbBundle <- function(
+    resources = NULL,
     version = "latest", ...
 ) {
+    version <- .spamtpdb_resolve_version(.spamtpdb_manifest(), version)
+    if (is.null(resources)) {
+        resources <- spaMTPdbResources(version = version, default_only = TRUE)$resource
+    }
     result <- lapply(
         resources,
-        SpaMTPdbResource,
+        spaMTPdbResource,
         version = version,
         ...
     )
@@ -334,8 +369,8 @@ SpaMTPdbBundle <- function(
 #' @export
 #'
 #' @examples
-#' SpaMTPdbVersion()
-SpaMTPdbVersion <- function() {
+#' spaMTPdbVersion()
+spaMTPdbVersion <- function() {
     versions <- unique(as.character(.spamtpdb_manifest()$version))
     rev(as.character(sort(package_version(versions))))
 }

@@ -1,3 +1,31 @@
+# SpaMTPdb 0.99.3
+
+* Added a maintainer-only shared release workflow for annotation database and
+  native experimental files in the existing Zenodo version family. Logical
+  resource ownership, Hub registries and resource versions remain separate.
+* Shared preparation verifies all files and preserves published registries.
+  Uploads use an explicit new-version or existing-draft target, validate the
+  version family, resume matching files, and reject conflicts without deleting
+  or overwriting remote files. Default execution is an offline dry run.
+* Removed automatic publication and independent-record creation from the legacy
+  upload entry point. Publishing remains a separate manual action.
+
+# SpaMTPdb 0.99.2
+
+* Added explicit roxygen2 importFrom declarations for every Imports package
+  and regression coverage for namespace dependency declarations.
+* Replaced PascalCase resource exports with spaMTPdbResource(),
+  spaMTPdbResources(), spaMTPdbBundle() and spaMTPdbVersion(), synchronized with
+  SpaMTP >= 0.99.3. The RaMP 3.0.7 resource contents and checksums are unchanged.
+* Verify local files by default, allow explicit unverified development fixtures,
+  and reuse a verified download cache before Hub access, including offline.
+  Bundle defaults now follow the requested resource version.
+* Updated the SMILES recipe to the native deconvolveSMILES() API and refuse
+  accidental overwrites of an existing structure resource. data-raw entry
+  points delegate to shipped recipes instead of keeping duplicate code.
+* Made the vignette offline-reproducible and documented the responsibilities
+  and coordinated versions of all three packages.
+
 # SpaMTPdb 0.99.1
 
 * Version bump only. The Zenodo download fallback shipped inside 0.99.0, so an

@@ -28,29 +28,37 @@ snapshot.
 
 ```{r setup}
 library(SpaMTPdb)
-resources <- SpaMTPdbResources(version = "latest")
+resources <- spaMTPdbResources(version = "latest")
 resources[c("resource", "version", "category", "default")]
 ```
 
 # Where the resources are stored
 
-The processed resource files are published on Zenodo and registered with
-`r BiocStyle::Biocpkg("AnnotationHub")`. The manifest records, for every
+The processed resource files are published on Zenodo and described by metadata
+for `r BiocStyle::Biocpkg("AnnotationHub")`. The manifest records, for every
 resource, the download location together with the size and MD5 checksum used
 to verify a retrieved file.
+
+The same Zenodo version family can also host native experimental RDS used by
+SpaMTPData. Publication is coordinated through SpaMTPdb's maintainer recipes,
+but the experimental resources stay in SpaMTPData's registry and ExperimentHub
+metadata. Sharing the physical host does not merge the two packages or put
+experiments into the annotation database bundle. The original RaMP 3.0.7
+snapshot keeps its fixed URL; later collection versions have their own URLs.
 
 ```{r resource-locations}
 resources[c("resource", "file_name", "bytes", "md5")]
 ```
 
-`SpaMTPdbResource()` resolves a resource in three steps, taking the first that
+`spaMTPdbResource()` resolves a resource in four steps, taking the first that
 succeeds:
 
 1. a staged local directory, for development and reproducible database builds;
-2. the matching AnnotationHub record;
-3. the immutable Zenodo source URL recorded in the manifest.
+2. an existing download cache that passes its size and checksum checks;
+3. the matching AnnotationHub record;
+4. the immutable Zenodo source URL recorded in the manifest.
 
-The third step means the package remains usable before the Hub records are
+The final step means the package remains usable before the Hub records are
 published, and every file retrieved that way is checked against its recorded
 size and MD5 checksum before use.
 
@@ -60,7 +68,7 @@ Passing `metadata = TRUE` returns the registry row and never touches the
 network:
 
 ```{r inspect-chemical-resource}
-chem_props_metadata <- SpaMTPdbResource(
+chem_props_metadata <- spaMTPdbResource(
   "chem_props",
   version = "3.0.7",
   metadata = TRUE
@@ -70,10 +78,11 @@ chem_props_metadata[c("resource", "version", "rows", "columns", "bytes")]
 
 The pruned RaMP chemical table and the derived structure features remain
 separate. SpaMTP's annotation engine loads and joins the second table by
-`iso_smiles` only when structure-aware ionisation scoring is requested:
+the chemical table's `iso_smiles` to the structure table's `smiles` column
+when structure-aware ionisation scoring is requested:
 
 ```{r inspect-structure-resource}
-smiles_features_metadata <- SpaMTPdbResource(
+smiles_features_metadata <- spaMTPdbResource(
   "smiles_features",
   version = "3.0.7",
   metadata = TRUE
@@ -83,26 +92,29 @@ smiles_features_metadata[c("resource", "version", "rows", "columns")]
 
 # Retrieving a resource
 
-Omit `metadata = TRUE` to retrieve and cache the R object. The provenance
-resource is small, so it is a convenient illustration of a real retrieval:
+Omit `metadata = TRUE` to retrieve and cache the R object. The evaluated
+example uses an explicitly synthetic local fixture, so package checks need
+no network connection. `verify = FALSE` is appropriate only for this deliberate
+fixture; it must not be used to call modified data an official RaMP snapshot.
 
 ```{r retrieve-metadata-resource}
-ramp_db_metadata <- try(
-  SpaMTPdbResource("ramp_db_metadata", version = "3.0.7"),
-  silent = TRUE
-)
-if (inherits(ramp_db_metadata, "try-error")) {
-  message("Resource retrieval skipped: no network access available.")
-} else {
-  str(ramp_db_metadata, max.level = 1)
-}
+ramp_db_metadata <- local({
+  directory <- tempfile("spamtpdb-demo-")
+  dir.create(directory)
+  on.exit(unlink(directory, recursive = TRUE))
+  saveRDS(list(synthetic = TRUE, label = "tutorial fixture"),
+    file.path(directory, "ramp_db_metadata.rds"))
+  spaMTPdbResource("ramp_db_metadata", local_dir = directory,
+    offline = TRUE, verify = FALSE)
+})
+str(ramp_db_metadata, max.level = 1)
 ```
 
 Larger resources are retrieved the same way. The chemical property table backs
 the indexed MS1 annotation engine:
 
 ```r
-chem_props <- SpaMTPdbResource("chem_props", version = "3.0.7")
+chem_props <- spaMTPdbResource("chem_props", version = "3.0.7")
 ```
 
 Downloads are cached, so repeated calls in an analysis resolve from disk. Use
@@ -111,11 +123,11 @@ Downloads are cached, so repeated calls in an analysis resolve from disk. Use
 
 # Retrieving a coherent bundle
 
-`SpaMTPdbBundle()` returns several resources from one database version, which
+`spaMTPdbBundle()` returns several resources from one database version, which
 keeps identifiers consistent across an analysis:
 
 ```{r bundle-metadata}
-bundle <- SpaMTPdbBundle(
+bundle <- spaMTPdbBundle(
   resources = c("chem_props", "pathway"),
   version = "3.0.7",
   metadata = TRUE
@@ -130,19 +142,32 @@ locally and bypass both the Hub and Zenodo entirely:
 
 ```r
 options(SpaMTPdb.resource_dir = "/path/to/SpaMTPdb-resources/3.0.7")
-core <- SpaMTPdbBundle()
+core <- spaMTPdbBundle()
 ```
 
-Setting `offline = TRUE` makes a missing local file an error rather than a
-download, which is useful on machines without outbound network access.
+Local files are verified against the registry by default. Setting
+`offline = TRUE` uses local files or a verified cache, and errors when neither
+is available rather than attempting a network connection.
+
+# The three-package workflow
+
+`SpaMTPdb` supplies versioned annotation tables, `SpaMTPData` supplies experiment
+resources and a small `spaMTPExampleData()` SpatialExperiment, and `SpaMTP`
+performs analysis using native Bioconductor containers. These data packages do
+not import the software package or Seurat. The executable three-package example
+is in SpaMTP's `SpaMTP_Companion_Workflow` vignette.
+
+The submission API uses `spaMTPdbResource()`, `spaMTPdbResources()`,
+`spaMTPdbBundle()` and `spaMTPdbVersion()`. Update the companion packages together
+with SpaMTP when replacing historical PascalCase calls.
 
 # Recording the version used
 
-`SpaMTPdbVersion()` reports the available snapshots, newest first. Recording
+`spaMTPdbVersion()` reports the available snapshots, newest first. Recording
 this value alongside an analysis makes the annotation step reproducible:
 
 ```{r versions}
-SpaMTPdbVersion()
+spaMTPdbVersion()
 ```
 
 # Session information

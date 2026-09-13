@@ -6,5 +6,8 @@
 #' developers may instead configure a directory containing staged `.rds`
 #' files.
 #'
+#' @importFrom AnnotationHub AnnotationHub query
+#' @importFrom S4Vectors mcols
+#' @importFrom utils download.file read.csv tail
 #' @keywords internal
 "_PACKAGE"
