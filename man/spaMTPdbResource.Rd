@@ -38,9 +38,11 @@ resource has not yet been ingested into AnnotationHub.}
 \item{cache_dir}{Cache directory for source-URL downloads. Defaults to the
 platform-specific user cache returned by \code{\link[tools:R_user_dir]{tools::R_user_dir()}}.}
 
-\item{timeout}{Download timeout in seconds for the source-URL fallback.}
+\item{timeout}{One finite numeric timeout in seconds, at least 1, for the
+source-URL fallback.}
 
-\item{retries}{Number of verified download attempts.}
+\item{retries}{One positive whole number of verified download attempts,
+no greater than \code{.Machine$integer.max}.}
 
 \item{verify}{Verify local files against the published size and checksum.
 Set to \code{FALSE} only for intentional development fixtures. Downloaded and

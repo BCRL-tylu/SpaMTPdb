@@ -1,3 +1,14 @@
+# SpaMTPdb 0.99.5
+
+* Simplified the README with staging installation instructions, a minimal
+  usage example, cache guidance and the package citation.
+* Validate download timeout and retry types before resource lookup. Invalid
+  values now produce an explicit error instead of being coerced or replaced.
+* Return download and AnnotationHub errors to the calling scope without
+  super-assignment, and validate manifest sizes without suppressing warnings.
+* Updated the resource introduction and maintainer publication guidance;
+  excluded local check output and development artifacts from package builds.
+
 # SpaMTPdb 0.99.4
 
 * Added `spaMTPdbGeneReference()` for a versioned HGNC quarterly archive with

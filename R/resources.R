@@ -86,12 +86,13 @@
 
 .spamtpdb_file_valid <- function(path, row) {
     if (!file.exists(path) || isTRUE(file.info(path)$isdir)) return(FALSE)
-    expected_bytes <- suppressWarnings(as.numeric(row$bytes[[1L]]))
-    if (length(expected_bytes) != 1L || !is.finite(expected_bytes) ||
+    expected_bytes <- row$bytes
+    if (!is.numeric(expected_bytes) || is.complex(expected_bytes) ||
+        length(expected_bytes) != 1L || !is.finite(expected_bytes) ||
         expected_bytes <= 0 || file.info(path)$size != expected_bytes) {
         return(FALSE)
     }
-    expected_md5 <- tolower(as.character(row$md5[[1L]]))
+    expected_md5 <- tolower(as.character(row$md5))
     if (length(expected_md5) != 1L || is.na(expected_md5) ||
         !grepl("^[0-9a-f]{32}$", expected_md5)) return(FALSE)
     identical(tolower(unname(tools::md5sum(path))), expected_md5)
@@ -114,8 +115,24 @@
     path
 }
 
+.spamtpdb_validate_download_args <- function(timeout, retries) {
+    if (!is.numeric(timeout) || is.complex(timeout) || length(timeout) != 1L ||
+        !is.finite(timeout) || timeout < 1) {
+        stop("timeout must be one finite number of seconds >= 1.",
+             call. = FALSE)
+    }
+    if (!is.numeric(retries) || is.complex(retries) || length(retries) != 1L ||
+        !is.finite(retries) || retries < 1 ||
+        retries > .Machine$integer.max || retries != floor(retries)) {
+        stop("retries must be one positive whole number <= ",
+             .Machine$integer.max, ".", call. = FALSE)
+    }
+    invisible(NULL)
+}
+
 .spamtpdb_download <- function(row, cache_dir = NULL, timeout = 1800,
                                retries = 3L) {
+    .spamtpdb_validate_download_args(timeout, retries)
     cache_dir <- .spamtpdb_cache_dir(cache_dir)
     version_dir <- file.path(cache_dir, as.character(row$version[[1L]]))
     dir.create(version_dir, recursive = TRUE, showWarnings = FALSE)
@@ -126,13 +143,12 @@
         as.character(row$location_prefix[[1L]]),
         as.character(row$rdata_path[[1L]])
     )
-    retries <- suppressWarnings(as.integer(retries)[1L])
-    if (is.na(retries) || retries < 1L) retries <- 1L
-    timeout <- suppressWarnings(as.numeric(timeout)[1L])
-    if (!is.finite(timeout) || timeout < 1) timeout <- 1800
     old_timeout <- getOption("timeout")
-    old_timeout_numeric <- suppressWarnings(as.numeric(old_timeout)[1L])
-    if (!is.finite(old_timeout_numeric)) old_timeout_numeric <- 60
+    old_timeout_numeric <- 60
+    if (is.numeric(old_timeout) && !is.complex(old_timeout) &&
+        length(old_timeout) == 1L && is.finite(old_timeout) && old_timeout >= 1) {
+        old_timeout_numeric <- old_timeout
+    }
     options(timeout = max(old_timeout_numeric, timeout))
     on.exit(options(timeout = old_timeout), add = TRUE)
 
@@ -156,15 +172,15 @@
                 if (!file.rename(partial, destination)) {
                     stop("could not move the verified file into the cache")
                 }
-                destination
+                list(success = TRUE, destination = destination)
             },
             error = function(error) {
-                last_error <<- conditionMessage(error)
-                unlink(partial)
-                NULL
+                list(success = FALSE, message = conditionMessage(error))
             }
         )
-        if (!is.null(result)) return(result)
+        if (result$success) return(result$destination)
+        last_error <- result$message
+        unlink(partial)
     }
     stop(
         "Failed to download verified SpaMTPdb resource '", row$resource,
@@ -241,8 +257,10 @@ spaMTPdbResources <- function(version = NULL, category = NULL,
 #'   resource has not yet been ingested into AnnotationHub.
 #' @param cache_dir Cache directory for source-URL downloads. Defaults to the
 #'   platform-specific user cache returned by [tools::R_user_dir()].
-#' @param timeout Download timeout in seconds for the source-URL fallback.
-#' @param retries Number of verified download attempts.
+#' @param timeout One finite numeric timeout in seconds, at least 1, for the
+#'   source-URL fallback.
+#' @param retries One positive whole number of verified download attempts,
+#'   no greater than `.Machine$integer.max`.
 #' @param verify Verify local files against the published size and checksum.
 #'   Set to `FALSE` only for intentional development fixtures. Downloaded and
 #'   cached files are always verified; loaded object classes are always checked.
@@ -256,6 +274,7 @@ spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
                              hub = NULL, metadata = FALSE, offline = FALSE,
                              fallback_url = TRUE, cache_dir = NULL,
                              timeout = 1800, retries = 3L, verify = TRUE) {
+    .spamtpdb_validate_download_args(timeout, retries)
     if (length(resource) != 1L || is.na(resource) || !nzchar(trimws(resource))) {
         stop("resource must be one non-empty name.", call. = FALSE)
     }
@@ -298,8 +317,7 @@ spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
         )
     }
 
-    hub_error <- NULL
-    value <- tryCatch(
+    hub_result <- tryCatch(
         {
             if (is.null(hub)) hub <- AnnotationHub()
             hits <- query(hub, c("SpaMTPdb", rows$title))
@@ -308,14 +326,15 @@ spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
             if (!length(exact)) {
                 stop("resource has not yet been ingested into AnnotationHub")
             }
-            hits[[exact[[1L]]]]
+            list(success = TRUE, value = hits[[exact[[1L]]]])
         },
         error = function(error) {
-            hub_error <<- conditionMessage(error)
-            NULL
+            list(success = FALSE, message = conditionMessage(error))
         }
     )
-    if (!is.null(value)) return(.spamtpdb_check_class(value, rows))
+    if (hub_result$success) {
+        return(.spamtpdb_check_class(hub_result$value, rows))
+    }
     if (isTRUE(fallback_url)) {
         path <- .spamtpdb_download(
             rows,
@@ -328,7 +347,7 @@ spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
         ))
     }
     stop(
-        "AnnotationHub could not provide '", rows$title, "': ", hub_error,
+        "AnnotationHub could not provide '", rows$title, "': ", hub_result$message,
         ". Configure a local resource directory or set fallback_url = TRUE.",
         call. = FALSE
     )

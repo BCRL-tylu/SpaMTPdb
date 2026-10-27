@@ -6,6 +6,9 @@ tables, pathway topology, precomputed SMILES features, and a human gene
 identifier reference from HGNC. Resources are downloaded as needed and cached
 locally. Experimental datasets are provided separately by SpaMTPData.
 
+RaMP resource versions, HGNC archive versions and R package versions are
+independent. Pin the resource version used by each analysis.
+
 ## Installation
 
 Requires **R >= 4.6.0**. During Bioconductor review, install from
@@ -42,8 +45,7 @@ genes <- spaMTPdbGeneReference(version = "2026.7.7")
 
 Use `metadata = TRUE` in either retrieval function to inspect a resource
 without downloading it. Use `offline = TRUE` to read previously cached or
-locally staged files. RaMP and HGNC resource versions are independent of the
-R package version.
+locally staged files. The retrieval examples above download data on first use.
 
 RaMP resources are retrieved through AnnotationHub when available, with a
 Zenodo fallback; the HGNC reference uses a fixed archive. Direct downloads are

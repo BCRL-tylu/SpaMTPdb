@@ -1,8 +1,8 @@
 Package: SpaMTPdb
 Type: Package
 Title: Versioned Annotation Resources for SpaMTP
-Version: 0.99.4
-Date: 2026-09-13
+Version: 0.99.5
+Date: 2026-10-27
 Authors@R: c(
     person("Tianyao", "Lu",
            email = "lu.t@wehi.edu.au",
@@ -16,12 +16,9 @@ Description: Provides lightweight, version-aware access to the annotation
     functional-group and ionisation features, and legacy metabolite reference
     tables, plus a separately versioned human gene identifier reference from
     fixed HGNC archives. RaMP resource files are hosted on Zenodo and described
-    by AnnotationHub metadata rather than bundled in the package. Retrieved files are
-    verified against recorded sizes and checksums and cached for reuse, and a
-    local resource directory can be used for development and reproducible
-    database builds. Maintainer recipes coordinate a shared Zenodo resource
-    collection with SpaMTPData while preserving separate annotation and
-    experiment registries and independent resource versions.
+    by AnnotationHub metadata rather than bundled in the package. Downloaded
+    and local resource files are verified against recorded sizes and checksums.
+    Verified downloads are cached for reuse, including offline analyses.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

@@ -17,14 +17,22 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 # Introduction
 
-`SpaMTPdb` separates versioned RaMP and metabolite annotation resources from
-the SpaMTP software package. This keeps the software package small while
-allowing analyses to record and reproduce the exact database snapshot used.
+`SpaMTPdb` provides the annotation references used by SpaMTP: RaMP chemical
+properties, identifiers, pathway membership and topology, precomputed SMILES
+features, and a separately versioned human HGNC gene reference. Keeping these
+resources outside the analysis package lets an analysis download only what it
+needs and record the exact reference versions used. Experimental datasets
+are supplied by SpaMTPData.
 
 Each resource is an independent serialised object, so an analysis downloads
 only the components it needs. Resource versions are immutable: future RaMP
 releases are added as new versions rather than replacing the RaMP 3.0.7
 snapshot.
+
+During Bioconductor review, follow the
+[staging installation instructions](https://github.com/BCRL-tylu/SpaMTPdb#installation).
+The evaluated examples in this vignette use packaged metadata and a labelled
+local fixture; they do not require resource downloads.
 
 ```{r setup}
 library(SpaMTPdb)
@@ -149,6 +157,23 @@ Local files are verified against the registry by default. Setting
 `offline = TRUE` uses local files or a verified cache, and errors when neither
 is available rather than attempting a network connection.
 
+# Human gene identifiers
+
+`spaMTPdbGeneReference()` retrieves a fixed HGNC quarterly archive containing
+approved symbols, aliases and stable identifiers. Its version is independent
+of the RaMP snapshot. Inspect its provenance without downloading the TSV:
+
+```{r gene-reference-metadata}
+gene_reference <- spaMTPdbGeneReference(version = "2026.7.7", metadata = TRUE)
+gene_reference[c("resource", "version", "organism", "bytes", "md5")]
+```
+
+Retrieve the table with
+`spaMTPdbGeneReference(version = "2026.7.7")`. It checks the archived file's
+size and checksum before parsing and supports verified local files and
+offline cache reuse. This is a human reference; it does not map genes between
+species.
+
 # The three-package workflow
 
 `SpaMTPdb` supplies versioned annotation tables, `SpaMTPData` supplies experiment
@@ -157,14 +182,11 @@ performs analysis using native Bioconductor containers. These data packages do
 not import the software package or Seurat. The executable three-package example
 is in SpaMTP's `SpaMTP_Companion_Workflow` vignette.
 
-The submission API uses `spaMTPdbResource()`, `spaMTPdbResources()`,
-`spaMTPdbBundle()` and `spaMTPdbVersion()`. Update the companion packages together
-with SpaMTP when replacing historical PascalCase calls.
-
 # Recording the version used
 
-`spaMTPdbVersion()` reports the available snapshots, newest first. Recording
-this value alongside an analysis makes the annotation step reproducible:
+`spaMTPdbVersion()` reports the available RaMP snapshots, newest first. Pin
+the `version` passed to each retrieval function and keep its metadata row
+alongside the analysis. The HGNC version is recorded separately:
 
 ```{r versions}
 spaMTPdbVersion()

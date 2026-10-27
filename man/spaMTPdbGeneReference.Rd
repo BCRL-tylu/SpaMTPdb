@@ -28,9 +28,10 @@ version subdirectory. Defaults to \code{SpaMTPdb.gene_reference_dir} or the
 
 \item{cache_dir}{Download cache root; see \code{\link[=spaMTPdbResource]{spaMTPdbResource()}}.}
 
-\item{timeout}{Download timeout in seconds.}
+\item{timeout}{One finite numeric timeout in seconds, at least 1.}
 
-\item{retries}{Number of verified download attempts.}
+\item{retries}{One positive whole number of verified download attempts,
+no greater than \code{.Machine$integer.max}.}
 }
 \value{
 A data frame with an attribute \code{spamtp_gene_reference} recording the

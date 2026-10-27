@@ -5,3 +5,10 @@
 data-raw/staging/
 *.Rcheck/
 *.tar.gz
+
+.local/
+*.BiocCheck/
+Rplots.pdf
+.idea/
+.vscode/
+.DS_Store

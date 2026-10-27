@@ -25,8 +25,9 @@
 #' @param metadata Return the version registry row without reading/downloading.
 #' @param offline Use local files or a verified cache only.
 #' @param cache_dir Download cache root; see [spaMTPdbResource()].
-#' @param timeout Download timeout in seconds.
-#' @param retries Number of verified download attempts.
+#' @param timeout One finite numeric timeout in seconds, at least 1.
+#' @param retries One positive whole number of verified download attempts,
+#'   no greater than `.Machine$integer.max`.
 #'
 #' @return A data frame with an attribute `spamtp_gene_reference` recording the
 #'   HGNC version, organism, source URL and checksum; or a metadata row.
@@ -36,6 +37,7 @@
 spaMTPdbGeneReference <- function(version = "latest", local_dir = NULL,
                                   metadata = FALSE, offline = FALSE,
                                   cache_dir = NULL, timeout = 1800, retries = 3L) {
+    .spamtpdb_validate_download_args(timeout, retries)
     manifest <- .spamtpdb_gene_manifest()
     version <- .spamtpdb_resolve_version(manifest, version)
     row <- manifest[manifest$version == version, , drop = FALSE]
