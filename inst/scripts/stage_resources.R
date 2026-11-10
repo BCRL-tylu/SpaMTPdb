@@ -111,6 +111,11 @@ for (field in c("r_data_class", "rows", "columns", "object_bytes", "bytes", "md5
     resources[[field]] <- rep(NA, nrow(resources))
 }
 
+# Corrections belong to the resource build. Existing registered versions retain
+# their immutable bytes; the loader handles those historical snapshots.
+source(file.path(package_root, "R", "pathway-interactions.R"))
+registered_version <- !is.null(previous) && any(as.character(previous$version) == version)
+
 for (i in seq_len(nrow(resources))) {
     resource <- resources$resource[[i]]
     target <- file.path(version_dir, paste0(resource, ".rds"))
@@ -140,8 +145,18 @@ for (i in seq_len(nrow(resources))) {
             stop("Object '", object_name, "' is absent from ", source_file,
                  call. = FALSE)
         }
-        saveRDS(environment[[object_name]], target, compress = "xz", version = 3L)
+        value <- environment[[object_name]]
+        if (!registered_version) value <- .spamtpdb_repair_pathway_interactions(
+            value, resource, file.path(package_root, "inst", "extdata"))
+        saveRDS(value, target, compress = "xz", version = 3L)
         message("Staged ", resource, " -> ", target)
+    }
+
+    if (!registered_version && resource %in% c("ramp_kegg", "ramp_reactome", "ramp_wikipathway", "ramp_hmdb")) {
+        original <- readRDS(target)
+        corrected <- .spamtpdb_repair_pathway_interactions(
+            original, resource, file.path(package_root, "inst", "extdata"))
+        if (!identical(corrected, original)) saveRDS(corrected, target, compress = "xz", version = 3L)
     }
 
     bytes <- file.info(target)$size

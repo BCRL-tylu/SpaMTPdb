@@ -9,6 +9,7 @@
 #'
 #' @importFrom AnnotationHub AnnotationHub query
 #' @importFrom S4Vectors mcols
+#' @importFrom digest digest
 #' @importFrom utils download.file read.csv tail
 #' @keywords internal
 "_PACKAGE"

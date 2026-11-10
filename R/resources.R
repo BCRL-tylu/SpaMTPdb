@@ -204,7 +204,7 @@
             call. = FALSE
         )
     }
-    value
+    .spamtpdb_repair_pathway_interactions(value, as.character(row$resource))
 }
 
 #' List SpaMTPdb resources
@@ -264,6 +264,12 @@ spaMTPdbResources <- function(version = NULL, category = NULL,
 #' @param verify Verify local files against the published size and checksum.
 #'   Set to `FALSE` only for intentional development fixtures. Downloaded and
 #'   cached files are always verified; loaded object classes are always checked.
+#'
+#' @details Pathway interaction resources preserve source reaction labels and
+#'   per-edge direction. For the immutable RaMP 3.0.7 files, exact-fingerprint
+#'   corrections are applied after verification. Their provenance is recorded
+#'   in the `spamtp_interaction_repair` attribute; published files are unchanged.
+#'   The staging recipe writes corrected interactions into new resource versions.
 #'
 #' @return The requested R object, or its registry row when `metadata = TRUE`.
 #' @export

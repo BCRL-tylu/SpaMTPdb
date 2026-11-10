@@ -1,3 +1,11 @@
+# SpaMTPdb 0.99.6
+
+* Own pathway interaction conversion and provenance in the resource package.
+  New staged versions preserve each source label, direction and parallel edge.
+* Correct exact-fingerprint matches of the immutable RaMP 3.0.7 topology
+  snapshots after file verification. Published files and checksums are unchanged.
+  The returned object records correction provenance separately.
+
 # SpaMTPdb 0.99.5
 
 * Simplified the README with staging installation instructions, a minimal

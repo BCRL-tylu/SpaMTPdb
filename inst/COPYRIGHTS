@@ -1,0 +1,9 @@
+inst/extdata/*_interactions_v1.rds are correction maps generated for SpaMTPdb.
+They contain row indices and interaction labels, not pathway graphs. They
+apply only to collections whose SHA-256 fingerprint matches. Source graphs
+retain their database-specific terms, including KEGG, Reactome, WikiPathways
+and SMPDB; SpaMTPdb's MIT code licence does not relicense those databases.
+The accompanying pathway_interactions_provenance.csv identifies the source
+URLs and checksums. See help("spaMTPdbResource") and the source-repository
+recipe data-raw/rebuild_pathway_interactions.R.
+
