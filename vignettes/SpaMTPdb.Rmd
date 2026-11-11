@@ -29,8 +29,15 @@ only the components it needs. Resource versions are immutable: future RaMP
 releases are added as new versions rather than replacing the RaMP 3.0.7
 snapshot.
 
-During Bioconductor review, follow the
-[staging installation instructions](https://github.com/BCRL-tylu/SpaMTPdb#installation).
+Install `SpaMTPdb` from Bioconductor using `BiocManager`:
+
+```{r install, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+    install.packages("BiocManager")
+}
+BiocManager::install("SpaMTPdb")
+```
+
 The evaluated examples in this vignette use packaged metadata and a labelled
 local fixture; they do not require resource downloads.
 

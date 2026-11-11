@@ -11,20 +11,13 @@ independent. Pin the resource version used by each analysis.
 
 ## Installation
 
-Requires **R >= 4.6.0**. During Bioconductor review, install from
-[BiocStaging](https://github.com/BiocStaging/SpaMTPdb):
+To install `SpaMTPdb`, start R (>= 4.6.0) and enter:
 
 ```r
-options(timeout = max(600, getOption("timeout")))
-Sys.setenv(R_DEFAULT_INTERNET_TIMEOUT = as.character(getOption("timeout")))
-
 if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager", repos = "https://cloud.r-project.org")
-if (!requireNamespace("remotes", quietly = TRUE))
-    install.packages("remotes", repos = "https://cloud.r-project.org")
+    install.packages("BiocManager")
 
-BiocManager::install("BiocStaging/SpaMTPdb@devel",
-                     ask = FALSE, update = FALSE)
+BiocManager::install("SpaMTPdb")
 ```
 
 For the SpaMTP workflow, install this package before installing SpaMTP.
