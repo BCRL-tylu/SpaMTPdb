@@ -2,6 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.Rdata
+.Renviron
+.Rprofile
+.httr-oauth
+*.Rproj
 data-raw/staging/
 *.Rcheck/
 *.tar.gz
@@ -12,3 +17,10 @@ Rplots.pdf
 .idea/
 .vscode/
 .DS_Store
+.quarto/
+inst/doc/
+docs/
+vignettes/.knitr-cache/
+*~
+*.swp
+*.swo

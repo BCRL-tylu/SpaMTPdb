@@ -22,11 +22,11 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Tianyao Lu \email{lu.t@wehi.edu.au}
+\strong{Maintainer}: Tianyao Lu \email{lu.t@wehi.edu.au} (\href{https://orcid.org/0009-0004-3013-8999}{ORCID})
 
 Authors:
 \itemize{
-  \item Tianyao Lu \email{lu.t@wehi.edu.au}
+  \item Tianyao Lu \email{lu.t@wehi.edu.au} (\href{https://orcid.org/0009-0004-3013-8999}{ORCID})
   \item Andrew Causer
   \item Quan Nguyen
 }

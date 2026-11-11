@@ -6,7 +6,8 @@ Date: 2026-10-27
 Authors@R: c(
     person("Tianyao", "Lu",
            email = "lu.t@wehi.edu.au",
-           role = c("aut", "cre")),
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0004-3013-8999")),
     person("Andrew", "Causer", role = "aut"),
     person("Quan", "Nguyen", role = "aut")
     )
