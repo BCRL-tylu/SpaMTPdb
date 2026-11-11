@@ -50,9 +50,9 @@ resources[c("resource", "version", "category", "default")]
 # Where the resources are stored
 
 The processed resource files are published on Zenodo and described by metadata
-for `r BiocStyle::Biocpkg("AnnotationHub")`. The manifest records, for every
-resource, the download location together with the size and MD5 checksum used
-to verify a retrieved file.
+for [AnnotationHub](https://bioconductor.org/packages/AnnotationHub/). The
+manifest records, for every resource, the download location together with the
+size and MD5 checksum used to verify a retrieved file.
 
 The same Zenodo version family can also host native experimental RDS used by
 SpaMTPData. Publication is coordinated through SpaMTPdb's maintainer recipes,
@@ -84,9 +84,9 @@ network:
 
 ```{r inspect-chemical-resource}
 chem_props_metadata <- spaMTPdbResource(
-  "chem_props",
-  version = "3.0.7",
-  metadata = TRUE
+    "chem_props",
+    version = "3.0.7",
+    metadata = TRUE
 )
 chem_props_metadata[c("resource", "version", "rows", "columns", "bytes")]
 ```
@@ -98,9 +98,9 @@ when structure-aware ionisation scoring is requested:
 
 ```{r inspect-structure-resource}
 smiles_features_metadata <- spaMTPdbResource(
-  "smiles_features",
-  version = "3.0.7",
-  metadata = TRUE
+    "smiles_features",
+    version = "3.0.7",
+    metadata = TRUE
 )
 smiles_features_metadata[c("resource", "version", "rows", "columns")]
 ```
@@ -114,13 +114,19 @@ fixture; it must not be used to call modified data an official RaMP snapshot.
 
 ```{r retrieve-metadata-resource}
 ramp_db_metadata <- local({
-  directory <- tempfile("spamtpdb-demo-")
-  dir.create(directory)
-  on.exit(unlink(directory, recursive = TRUE))
-  saveRDS(list(synthetic = TRUE, label = "tutorial fixture"),
-    file.path(directory, "ramp_db_metadata.rds"))
-  spaMTPdbResource("ramp_db_metadata", local_dir = directory,
-    offline = TRUE, verify = FALSE)
+    directory <- tempfile("spamtpdb-demo-")
+    dir.create(directory)
+    on.exit(unlink(directory, recursive = TRUE))
+    saveRDS(
+        list(synthetic = TRUE, label = "tutorial fixture"),
+        file.path(directory, "ramp_db_metadata.rds")
+    )
+    spaMTPdbResource(
+        "ramp_db_metadata",
+        local_dir = directory,
+        offline = TRUE,
+        verify = FALSE
+    )
 })
 str(ramp_db_metadata, max.level = 1)
 ```
@@ -143,9 +149,9 @@ keeps identifiers consistent across an analysis:
 
 ```{r bundle-metadata}
 bundle <- spaMTPdbBundle(
-  resources = c("chem_props", "pathway"),
-  version = "3.0.7",
-  metadata = TRUE
+    resources = c("chem_props", "pathway"),
+    version = "3.0.7",
+    metadata = TRUE
 )
 vapply(bundle, function(row) row$title, character(1))
 ```

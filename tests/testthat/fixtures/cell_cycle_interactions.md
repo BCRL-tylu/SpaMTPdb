@@ -7,6 +7,6 @@
   corresponding graphite archive-19 `protEdges` table (2022-11-01).
 
 Both input URLs and checksums are recorded in
-`inst/extdata/pathway_interactions_provenance.csv`. The fixture has 1,009
+`inst/manifest/pathway_interactions_provenance.csv`. The fixture has 1,009
 protein-edge rows. It tests the shipped correction against source labels,
 including directions and labels on parallel edges, without network access.

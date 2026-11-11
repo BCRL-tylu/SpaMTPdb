@@ -137,3 +137,38 @@ test_that("bundle defaults are resolved from the requested version", {
 test_that("all exported functions follow camelCase", {
     expect_true(all(grepl("^[a-z][A-Za-z0-9]*$", getNamespaceExports("SpaMTPdb"))))
 })
+
+test_that("extdata keeps metadata.csv as the sole CSV for AnnotationHub ingestion", {
+    extdata <- system.file("extdata", package = "SpaMTPdb")
+    csv_files <- list.files(extdata, pattern = "\\.csv$", ignore.case = TRUE)
+    expect_identical(csv_files, "metadata.csv")
+
+    provenance <- system.file(
+        "manifest", "pathway_interactions_provenance.csv",
+        package = "SpaMTPdb"
+    )
+    audit <- system.file(
+        "manifest", "pathway_interactions_audit.csv",
+        package = "SpaMTPdb"
+    )
+    expect_true(nzchar(provenance) && file.exists(provenance))
+    expect_true(nzchar(audit) && file.exists(audit))
+
+    pkg_root <- normalizePath(file.path(testthat::test_path(), "..", ".."), mustWork = FALSE)
+    if (file.exists(file.path(pkg_root, "DESCRIPTION")) &&
+        requireNamespace("AnnotationHubData", quietly = TRUE)) {
+        meta <- AnnotationHubData::makeAnnotationHubMetadata(pkg_root)
+        expect_true(length(meta) > 0L)
+    }
+})
+
+test_that("spaMTPdbBundle rejects unused arguments even for empty resource vectors", {
+    expect_error(
+        spaMTPdbBundle(character(), unknown_arg = TRUE),
+        "unknown_arg"
+    )
+    expect_error(
+        spaMTPdbBundle(character(), "latest", "unnamed"),
+        "Unused or unnamed"
+    )
+})

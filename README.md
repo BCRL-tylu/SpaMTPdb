@@ -1,17 +1,18 @@
 # SpaMTPdb
 
 **SpaMTPdb** provides versioned annotation resources for
-[SpaMTP](https://github.com/SpaMTP-project/SpaMTP): RaMP metabolite and pathway
+[SpaMTP](https://bioconductor.org/packages/SpaMTP/): RaMP metabolite and pathway
 tables, pathway topology, precomputed SMILES features, and a human gene
-identifier reference from HGNC. Resources are downloaded as needed and cached
-locally. Experimental datasets are provided separately by SpaMTPData.
+identifier reference from HGNC. Resources are downloaded on demand and cached
+locally. Companion experimental datasets are provided separately by
+[SpaMTPData](https://bioconductor.org/packages/SpaMTPData/).
 
 RaMP resource versions, HGNC archive versions and R package versions are
 independent. Pin the resource version used by each analysis.
 
 ## Installation
 
-To install `SpaMTPdb`, start R (>= 4.6.0) and enter:
+To install `SpaMTPdb` from Bioconductor, start R (>= 4.6.0) and enter:
 
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE))
@@ -20,7 +21,8 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("SpaMTPdb")
 ```
 
-For the SpaMTP workflow, install this package before installing SpaMTP.
+Installing `SpaMTP` from Bioconductor installs `SpaMTPdb` automatically; run the
+command above when using `SpaMTPdb` standalone.
 
 ## Quick start
 
@@ -44,8 +46,11 @@ RaMP resources are retrieved through AnnotationHub when available, with a
 Zenodo fallback; the HGNC reference uses a fixed archive. Direct downloads are
 verified against the file sizes and checksums recorded in the package manifest.
 
-See the [vignette](vignettes/SpaMTPdb.Rmd) for resource bundles, local
-directories and cache configuration.
+See the [vignette](vignettes/SpaMTPdb.Rmd) (`browseVignettes("SpaMTPdb")`) for
+resource bundles, local directories and cache configuration. Post usage
+questions on the [Bioconductor Support Site](https://support.bioconductor.org/)
+and report bugs in the
+[GitHub issue tracker](https://github.com/BCRL-tylu/SpaMTPdb/issues).
 
 ## Citation
 

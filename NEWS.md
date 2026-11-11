@@ -2,9 +2,14 @@
 
 * Own pathway interaction conversion and provenance in the resource package.
   New staged versions preserve each source label, direction and parallel edge.
+* Store pathway interaction provenance and audit CSVs in `inst/manifest/` so
+  `inst/extdata/` contains only `metadata.csv` among `.csv` files for
+  `AnnotationHubData::makeAnnotationHubMetadata()` ingestion.
 * Correct exact-fingerprint matches of the immutable RaMP 3.0.7 topology
   snapshots after file verification. Published files and checksums are unchanged.
   The returned object records correction provenance separately.
+* Update README installation guidance for Bioconductor release and validate
+  forwarded arguments in `spaMTPdbBundle()`.
 
 # SpaMTPdb 0.99.5
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Rscript data-raw/rebuild_pathway_interactions.R GRAPHITE_DIR OLD_SOURCE_RDA RESOURCE_DIR
-# Inputs are pinned in inst/extdata/pathway_interactions_provenance.csv.
+# Inputs are pinned in inst/manifest/pathway_interactions_provenance.csv.
 # The output is an in-memory correction for the immutable RaMP 3.0.7 graphs.
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) != 3L) stop("Supply GRAPHITE_DIR OLD_SOURCE_RDA RESOURCE_DIR.")
@@ -9,7 +9,7 @@ root <- normalizePath(file.path(dirname(script), ".."))
 source(file.path(root, "data-raw", "ramp_graph_utils.R"))
 source(file.path(root, "data-raw", "pathway_interaction_utils.R"))
 source(file.path(root, "R", "pathway-interactions.R"))
-manifest <- read.csv(file.path(root, "inst", "extdata", "pathway_interactions_provenance.csv"))
+manifest <- read.csv(file.path(root, "inst", "manifest", "pathway_interactions_provenance.csv"))
 check_input <- function(path, name = basename(path)) {
   expected <- manifest$md5[match(name, manifest$file)]
   if (is.na(expected) || !identical(unname(tools::md5sum(path)), expected)) {
@@ -115,9 +115,11 @@ for (resource in names(databases)) {
   gc(FALSE)
 }
 output <- file.path(root, "inst", "extdata")
+manifest_dir <- file.path(root, "inst", "manifest")
 dir.create(output, recursive = TRUE, showWarnings = FALSE)
+dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
 for (resource in names(patches)) {
   saveRDS(patches[[resource]], file.path(output, paste0(resource, "_interactions_v1.rds")),
           compress = "xz", version = 2)
 }
-write.csv(do.call(rbind, audit), file.path(output, "pathway_interactions_audit.csv"), row.names = FALSE)
+write.csv(do.call(rbind, audit), file.path(manifest_dir, "pathway_interactions_audit.csv"), row.names = FALSE)

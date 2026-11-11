@@ -64,8 +64,9 @@ checksum. The verified download cache is usable with \code{offline = TRUE}.
 Pathway interaction resources preserve source reaction labels and
 per-edge direction. For the immutable RaMP 3.0.7 files, exact-fingerprint
 corrections are applied after verification. Their provenance is recorded
-in the \code{spamtp_interaction_repair} attribute; published files are unchanged.
-The staging recipe writes corrected interactions into new resource versions.
+in the \code{spamtp_interaction_repair} attribute; published files are
+unchanged. The staging recipe writes corrected interactions into new
+resource versions.
 }
 \examples{
 spaMTPdbResource("chem_props", metadata = TRUE)

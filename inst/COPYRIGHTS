@@ -3,7 +3,14 @@ They contain row indices and interaction labels, not pathway graphs. They
 apply only to collections whose SHA-256 fingerprint matches. Source graphs
 retain their database-specific terms, including KEGG, Reactome, WikiPathways
 and SMPDB; SpaMTPdb's MIT code licence does not relicense those databases.
-The accompanying pathway_interactions_provenance.csv identifies the source
-URLs and checksums. See help("spaMTPdbResource") and the source-repository
-recipe data-raw/rebuild_pathway_interactions.R.
+The accompanying inst/manifest/pathway_interactions_provenance.csv identifies
+the source URLs and checksums. See help("spaMTPdbResource") and the
+source-repository recipe data-raw/rebuild_pathway_interactions.R.
+
+AI-assisted development
+
+OpenAI Codex assisted with pathway-interaction correction transfer, regression
+tests and Bioconductor review updates. Git history records the scope of the
+changes. Maintainers remain responsible for reviewing the contribution, its
+reliability and its maintenance. AI tools are not listed as package authors.
 

@@ -16,10 +16,11 @@ Description: Provides lightweight, version-aware access to the annotation
     identifier, pathway, and pathway-topology tables, precomputed SMILES
     functional-group and ionisation features, and legacy metabolite reference
     tables, plus a separately versioned human gene identifier reference from
-    fixed HGNC archives. RaMP resource files are hosted on Zenodo and described
-    by AnnotationHub metadata rather than bundled in the package. Downloaded
-    and local resource files are verified against recorded sizes and checksums.
-    Verified downloads are cached for reuse, including offline analyses.
+    fixed HGNC archives. The full RaMP resource files are hosted on Zenodo and
+    described by AnnotationHub metadata rather than bundled in the package.
+    Downloaded and local resource files are verified against recorded sizes and
+    checksums. Verified downloads are cached for reuse, including offline
+    analyses.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends:

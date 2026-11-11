@@ -1,6 +1,11 @@
 .spamtpdb_gene_manifest <- function() {
-    path <- system.file("manifest", "gene_reference_manifest.csv", package = "SpaMTPdb")
-    if (!nzchar(path)) stop("SpaMTPdb gene reference manifest is unavailable.", call. = FALSE)
+    path <- system.file(
+        "manifest", "gene_reference_manifest.csv",
+        package = "SpaMTPdb"
+    )
+    if (!nzchar(path)) {
+        stop("SpaMTPdb gene reference manifest is unavailable.", call. = FALSE)
+    }
     utils::read.csv(path, stringsAsFactors = FALSE)
 }
 
@@ -34,18 +39,24 @@
 #' @export
 #' @examples
 #' spaMTPdbGeneReference(metadata = TRUE)
-spaMTPdbGeneReference <- function(version = "latest", local_dir = NULL,
-                                  metadata = FALSE, offline = FALSE,
-                                  cache_dir = NULL, timeout = 1800, retries = 3L) {
+spaMTPdbGeneReference <- function(
+    version = "latest", local_dir = NULL,
+    metadata = FALSE, offline = FALSE,
+    cache_dir = NULL, timeout = 1800, retries = 3L
+) {
     .spamtpdb_validate_download_args(timeout, retries)
     manifest <- .spamtpdb_gene_manifest()
     version <- .spamtpdb_resolve_version(manifest, version)
     row <- manifest[manifest$version == version, , drop = FALSE]
-    if (nrow(row) != 1L) stop("Gene reference version is not unique.", call. = FALSE)
+    if (nrow(row) != 1L) {
+        stop("Gene reference version is not unique.", call. = FALSE)
+    }
     if (isTRUE(metadata)) return(row)
     if (is.null(local_dir)) {
         local_dir <- getOption("SpaMTPdb.gene_reference_dir", "")
-        if (!nzchar(local_dir)) local_dir <- Sys.getenv("SPAMTPDB_GENE_REFERENCE_DIR", "")
+        if (!nzchar(local_dir)) {
+            local_dir <- Sys.getenv("SPAMTPDB_GENE_REFERENCE_DIR", "")
+        }
         if (!nzchar(local_dir)) local_dir <- NULL
     }
     path <- .spamtpdb_local_file(row, local_dir)
@@ -56,20 +67,33 @@ spaMTPdbGeneReference <- function(version = "latest", local_dir = NULL,
     }
     if (is.null(path)) {
         if (isTRUE(offline)) {
-            stop("HGNC gene reference is absent from local files and verified cache; offline = TRUE.",
-                 call. = FALSE)
+            stop(
+                "HGNC gene reference is absent from local files and verified ",
+                "cache; offline = TRUE.",
+                call. = FALSE
+            )
         }
         path <- .spamtpdb_download(row, cache_dir, timeout, retries)
     }
-    value <- utils::read.delim(path, quote = "\"", comment.char = "",
-                              colClasses = "character", check.names = FALSE)
-    required <- c("hgnc_id", "symbol", "status", "prev_symbol", "alias_symbol",
-                  "entrez_id", "ensembl_gene_id", "uniprot_ids")
+    value <- utils::read.delim(
+        path,
+        quote = "\"", comment.char = "",
+        colClasses = "character", check.names = FALSE
+    )
+    required <- c(
+        "hgnc_id", "symbol", "status", "prev_symbol", "alias_symbol",
+        "entrez_id", "ensembl_gene_id", "uniprot_ids"
+    )
     if (!all(required %in% names(value))) {
-        stop("HGNC reference is missing required identifier columns.", call. = FALSE)
+        stop(
+            "HGNC reference is missing required identifier columns.",
+            call. = FALSE
+        )
     }
     attr(value, "spamtp_gene_reference") <- list(
-        provider = "SpaMTPdb", resource = "hgnc_gene_reference", version = version,
+        provider = "SpaMTPdb",
+        resource = "hgnc_gene_reference",
+        version = version,
         organism = "Homo sapiens", taxonomy_id = 9606L,
         source_url = paste0(row$location_prefix, row$rdata_path), md5 = row$md5
     )

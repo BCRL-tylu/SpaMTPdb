@@ -2,7 +2,8 @@
 
 .spamtpdb_graph_fingerprint <- function(value) {
     # Provenance attached by a loader does not change the resource contents.
-    attributes(value) <- attributes(value)[intersect(names(attributes(value)), "names")]
+    kept <- intersect(names(attributes(value)), "names")
+    attributes(value) <- attributes(value)[kept]
     digest::digest(value, algo = "sha256", serializeVersion = 2L)
 }
 
@@ -26,21 +27,28 @@
     value
 }
 
-.spamtpdb_repair_pathway_interactions <- function(value, resource, patch_dir = NULL) {
+.spamtpdb_repair_pathway_interactions <- function(
+    value, resource, patch_dir = NULL
+) {
+    repaired <- attr(value, "spamtp_interaction_repair", exact = TRUE)
     if (!resource %in% c(
         "ramp_kegg",
         "ramp_reactome",
         "ramp_wikipathway",
         "ramp_hmdb"
-    ) ||
-        !is.list(value) || !is.null(attr(value, "spamtp_interaction_repair", exact = TRUE))) {
+    ) || !is.list(value) || !is.null(repaired)) {
         return(value)
     }
     if (is.null(.spamtpdb_interaction_repair_cache[[resource]])) {
+        filename <- paste0(resource, "_interactions_v1.rds")
         path <- if (is.null(patch_dir)) {
-            system.file("extdata", paste0(resource, "_interactions_v1.rds"), package = "SpaMTPdb")
-        } else file.path(patch_dir, paste0(resource, "_interactions_v1.rds"))
-        if (!nzchar(path)) stop("Cannot locate the pathway interaction correction resource.")
+            system.file("extdata", filename, package = "SpaMTPdb")
+        } else {
+            file.path(patch_dir, filename)
+        }
+        if (!nzchar(path)) {
+            stop("Cannot locate the pathway interaction correction resource.")
+        }
         .spamtpdb_interaction_repair_cache[[resource]] <- readRDS(path)
     }
     patch <- .spamtpdb_interaction_repair_cache[[resource]]

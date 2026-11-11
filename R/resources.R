@@ -100,17 +100,23 @@
 
 .spamtpdb_cached_file <- function(row, cache_dir = NULL) {
     root <- .spamtpdb_cache_dir(cache_dir, create = FALSE)
-    paths <- c(file.path(root, row$version, row$file_name),
-               file.path(root, row$file_name))
+    paths <- c(
+        file.path(root, row$version, row$file_name),
+        file.path(root, row$file_name)
+    )
     valid <- vapply(paths, .spamtpdb_file_valid, logical(1), row = row)
     if (any(valid)) paths[which(valid)[1L]] else NULL
 }
 
 .spamtpdb_verify_local <- function(path, row, verify) {
     if (verify && !.spamtpdb_file_valid(path, row)) {
-        stop("Local resource '", row$resource, "' failed its size or MD5 check. ",
-             "Use verify = FALSE only for intentional development fixtures, ",
-             "not to label modified data as an official release.", call. = FALSE)
+        stop(
+            "Local resource '", row$resource,
+            "' failed its size or MD5 check. ",
+            "Use verify = FALSE only for intentional development fixtures, ",
+            "not to label modified data as an official release.",
+            call. = FALSE
+        )
     }
     path
 }
@@ -118,20 +124,26 @@
 .spamtpdb_validate_download_args <- function(timeout, retries) {
     if (!is.numeric(timeout) || is.complex(timeout) || length(timeout) != 1L ||
         !is.finite(timeout) || timeout < 1) {
-        stop("timeout must be one finite number of seconds >= 1.",
-             call. = FALSE)
+        stop(
+            "timeout must be one finite number of seconds >= 1.",
+            call. = FALSE
+        )
     }
     if (!is.numeric(retries) || is.complex(retries) || length(retries) != 1L ||
         !is.finite(retries) || retries < 1 ||
         retries > .Machine$integer.max || retries != floor(retries)) {
-        stop("retries must be one positive whole number <= ",
-             .Machine$integer.max, ".", call. = FALSE)
+        stop(
+            "retries must be one positive whole number <= ",
+            .Machine$integer.max, ".",
+            call. = FALSE
+        )
     }
     invisible(NULL)
 }
 
-.spamtpdb_download <- function(row, cache_dir = NULL, timeout = 1800,
-                               retries = 3L) {
+.spamtpdb_download <- function(
+    row, cache_dir = NULL, timeout = 1800, retries = 3L
+) {
     .spamtpdb_validate_download_args(timeout, retries)
     cache_dir <- .spamtpdb_cache_dir(cache_dir)
     version_dir <- file.path(cache_dir, as.character(row$version[[1L]]))
@@ -146,7 +158,8 @@
     old_timeout <- getOption("timeout")
     old_timeout_numeric <- 60
     if (is.numeric(old_timeout) && !is.complex(old_timeout) &&
-        length(old_timeout) == 1L && is.finite(old_timeout) && old_timeout >= 1) {
+        length(old_timeout) == 1L && is.finite(old_timeout) &&
+        old_timeout >= 1) {
         old_timeout_numeric <- old_timeout
     }
     options(timeout = max(old_timeout_numeric, timeout))
@@ -219,8 +232,9 @@
 #'
 #' @examples
 #' spaMTPdbResources(default_only = TRUE)
-spaMTPdbResources <- function(version = NULL, category = NULL,
-                              default_only = FALSE) {
+spaMTPdbResources <- function(
+    version = NULL, category = NULL, default_only = FALSE
+) {
     manifest <- .spamtpdb_manifest()
     if (!is.null(version)) {
         version <- .spamtpdb_resolve_version(manifest, version)
@@ -268,20 +282,24 @@ spaMTPdbResources <- function(version = NULL, category = NULL,
 #' @details Pathway interaction resources preserve source reaction labels and
 #'   per-edge direction. For the immutable RaMP 3.0.7 files, exact-fingerprint
 #'   corrections are applied after verification. Their provenance is recorded
-#'   in the `spamtp_interaction_repair` attribute; published files are unchanged.
-#'   The staging recipe writes corrected interactions into new resource versions.
+#'   in the `spamtp_interaction_repair` attribute; published files are
+#'   unchanged. The staging recipe writes corrected interactions into new
+#'   resource versions.
 #'
 #' @return The requested R object, or its registry row when `metadata = TRUE`.
 #' @export
 #'
 #' @examples
 #' spaMTPdbResource("chem_props", metadata = TRUE)
-spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
-                             hub = NULL, metadata = FALSE, offline = FALSE,
-                             fallback_url = TRUE, cache_dir = NULL,
-                             timeout = 1800, retries = 3L, verify = TRUE) {
+spaMTPdbResource <- function(
+    resource, version = "latest", local_dir = NULL,
+    hub = NULL, metadata = FALSE, offline = FALSE,
+    fallback_url = TRUE, cache_dir = NULL,
+    timeout = 1800, retries = 3L, verify = TRUE
+) {
     .spamtpdb_validate_download_args(timeout, retries)
-    if (length(resource) != 1L || is.na(resource) || !nzchar(trimws(resource))) {
+    if (length(resource) != 1L || is.na(resource) ||
+        !nzchar(trimws(resource))) {
         stop("resource must be one non-empty name.", call. = FALSE)
     }
     if (!is.logical(verify) || length(verify) != 1L || is.na(verify)) {
@@ -353,7 +371,8 @@ spaMTPdbResource <- function(resource, version = "latest", local_dir = NULL,
         ))
     }
     stop(
-        "AnnotationHub could not provide '", rows$title, "': ", hub_result$message,
+        "AnnotationHub could not provide '", rows$title, "': ",
+        hub_result$message,
         ". Configure a local resource directory or set fallback_url = TRUE.",
         call. = FALSE
     )
@@ -375,9 +394,31 @@ spaMTPdbBundle <- function(
     resources = NULL,
     version = "latest", ...
 ) {
+    if (...length()) {
+        arg_names <- ...names()
+        allowed <- setdiff(
+            names(formals(spaMTPdbResource)),
+            c("resource", "version")
+        )
+        if (is.null(arg_names) || any(!nzchar(arg_names)) ||
+            anyDuplicated(arg_names) || !all(arg_names %in% allowed)) {
+            bad <- if (is.null(arg_names)) "" else setdiff(arg_names, allowed)
+            detail <- if (length(bad) && all(nzchar(bad))) {
+                paste0(": ", paste(bad, collapse = ", "))
+            } else {
+                ""
+            }
+            stop(
+                "Unused or unnamed argument(s) in spaMTPdbBundle()",
+                detail, ".",
+                call. = FALSE
+            )
+        }
+    }
     version <- .spamtpdb_resolve_version(.spamtpdb_manifest(), version)
     if (is.null(resources)) {
-        resources <- spaMTPdbResources(version = version, default_only = TRUE)$resource
+        defaults <- spaMTPdbResources(version = version, default_only = TRUE)
+        resources <- defaults$resource
     }
     result <- lapply(
         resources,
